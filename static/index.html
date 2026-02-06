@@ -2,140 +2,620 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1e293b">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>DogLog - Dog Training Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--primary:#2563eb;--primary-dark:#1d4ed8;--primary-light:#dbeafe;--success:#16a34a;--success-light:#dcfce7;--danger:#dc2626;--danger-light:#fee2e2;--g50:#f9fafb;--g100:#f3f4f6;--g200:#e5e7eb;--g300:#d1d5db;--g400:#9ca3af;--g500:#6b7280;--g600:#4b5563;--g700:#374151;--g800:#1f2937;--g900:#111827;--r:8px;--sh:0 1px 3px rgba(0,0,0,.1);--shm:0 4px 6px rgba(0,0,0,.1)}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--g50);color:var(--g800);line-height:1.5}
-a{color:var(--primary);text-decoration:none}
+:root {
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-light: #eef2ff;
+  --primary-glow: rgba(99,102,241,.15);
+  --accent: #06b6d4;
+  --accent-light: #ecfeff;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --warning: #f59e0b;
+  --g0: #ffffff;
+  --g50: #f8fafc;
+  --g100: #f1f5f9;
+  --g200: #e2e8f0;
+  --g300: #cbd5e1;
+  --g400: #94a3b8;
+  --g500: #64748b;
+  --g600: #475569;
+  --g700: #334155;
+  --g800: #1e293b;
+  --g900: #0f172a;
+  --r: 12px;
+  --r-sm: 8px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+  --sh-xs: 0 1px 2px rgba(0,0,0,.05);
+  --sh: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --sh-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05);
+  --sh-lg: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -4px rgba(0,0,0,.04);
+  --sh-xl: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.06);
+  --ease: cubic-bezier(.4, 0, .2, 1);
+  --ease-bounce: cubic-bezier(.34, 1.56, .64, 1);
+}
 
-/* Layout */
-#app{min-height:100vh;display:flex;flex-direction:column}
-.navbar{background:var(--primary);color:#fff;padding:0 1rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shm)}
-.navbar-brand{font-size:1.25rem;font-weight:700;color:#fff;cursor:pointer}
-.nav-links{display:flex;gap:.25rem;align-items:center}
-.nav-links a,.nav-links button{color:rgba(255,255,255,.9);padding:.5rem .75rem;border-radius:var(--r);font-size:.875rem;transition:background .2s;background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:none}
-.nav-links a:hover,.nav-links button:hover,.nav-links a.active{background:rgba(255,255,255,.2);color:#fff}
-.main{flex:1;padding:1.5rem;max-width:960px;width:100%;margin:0 auto}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--g50);
+  color: var(--g800);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+a { color: var(--primary); text-decoration: none; }
+
+/* Page transition */
+#app { min-height: 100vh; display: flex; flex-direction: column; }
+.main { flex: 1; padding: 1.5rem; max-width: 900px; width: 100%; margin: 0 auto; animation: fadeUp .35s var(--ease); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: none; } }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+/* Navbar */
+.navbar {
+  background: var(--g900);
+  color: #fff;
+  padding: 0 1.25rem;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.navbar-brand {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  letter-spacing: -.02em;
+}
+.navbar-brand .brand-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+}
+.nav-links { display: flex; gap: .125rem; align-items: center; }
+.nav-links a, .nav-links button {
+  color: var(--g400);
+  padding: .5rem .875rem;
+  border-radius: var(--r-sm);
+  font-size: .8125rem;
+  font-weight: 500;
+  transition: all .2s var(--ease);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+  position: relative;
+}
+.nav-links a:hover, .nav-links button:hover { color: #fff; background: rgba(255,255,255,.08); }
+.nav-links a.active { color: #fff; background: rgba(255,255,255,.1); }
 
 /* Bottom nav */
-.bnav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--g200);z-index:100;padding:.25rem 0;padding-bottom:env(safe-area-inset-bottom,.25rem)}
-.bnav a{flex:1;display:flex;flex-direction:column;align-items:center;padding:.5rem 0;color:var(--g400);text-decoration:none;font-size:.625rem;gap:.125rem}
-.bnav a.active{color:var(--primary)}
-.bnav .ni{font-size:1.25rem}
+.bnav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--g200);
+  z-index: 100;
+  padding: .375rem 0;
+  padding-bottom: max(env(safe-area-inset-bottom), .375rem);
+}
+.bnav a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: .25rem 0;
+  color: var(--g400);
+  text-decoration: none;
+  font-size: .625rem;
+  font-weight: 500;
+  gap: .125rem;
+  transition: color .2s var(--ease);
+}
+.bnav a.active { color: var(--primary); }
+.bnav .ni { font-size: 1.375rem; line-height: 1; }
 
-/* Card */
-.card{background:#fff;border-radius:var(--r);box-shadow:var(--sh);padding:1.25rem;margin-bottom:1rem}
-.card-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
-.card-title{font-size:1.125rem;font-weight:600}
+/* Cards */
+.card {
+  background: var(--g0);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--g100);
+  transition: box-shadow .2s var(--ease);
+}
+.card-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.card-title { font-size: 1rem; font-weight: 700; letter-spacing: -.01em; }
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.5rem 1rem;border-radius:var(--r);font-size:.875rem;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .2s;font-family:inherit;text-decoration:none}
-.btn-p{background:var(--primary);color:#fff}.btn-p:hover{background:var(--primary-dark)}
-.btn-s{background:var(--success);color:#fff}
-.btn-d{background:var(--danger);color:#fff}.btn-d:hover{background:#b91c1c}
-.btn-o{background:#fff;border-color:var(--g300);color:var(--g700)}.btn-o:hover{background:var(--g50)}
-.btn-sm{padding:.25rem .625rem;font-size:.8125rem}
-.btn-lg{padding:.75rem 1.5rem;font-size:1rem}
-.btn-block{width:100%}
-.btn-group{display:flex;gap:.5rem}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .5625rem 1.125rem;
+  border-radius: var(--r);
+  font-size: .8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all .2s var(--ease);
+  font-family: inherit;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+.btn:active { transform: scale(.97); }
+.btn-p {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(99,102,241,.3), 0 0 0 0 rgba(99,102,241,0);
+}
+.btn-p:hover { background: var(--primary-hover); box-shadow: 0 4px 12px rgba(99,102,241,.35); transform: translateY(-1px); }
+.btn-p:active { transform: translateY(0) scale(.97); }
+.btn-s {
+  background: var(--success);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(16,185,129,.3);
+}
+.btn-s:hover { background: #059669; box-shadow: 0 4px 12px rgba(16,185,129,.35); transform: translateY(-1px); }
+.btn-d {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger-light);
+}
+.btn-d:hover { background: var(--danger-light); }
+.btn-o {
+  background: var(--g0);
+  border: 1px solid var(--g200);
+  color: var(--g700);
+}
+.btn-o:hover { background: var(--g50); border-color: var(--g300); }
+.btn-sm { padding: .3125rem .625rem; font-size: .75rem; border-radius: var(--r-sm); }
+.btn-lg { padding: .75rem 1.5rem; font-size: .9375rem; border-radius: var(--r); }
+.btn-block { width: 100%; }
+.btn-group { display: flex; gap: .5rem; flex-wrap: wrap; }
 
 /* Forms */
-.fg{margin-bottom:1rem}
-.fl{display:block;font-size:.875rem;font-weight:500;color:var(--g700);margin-bottom:.25rem}
-.fi,.fs,.ft{width:100%;padding:.5rem .75rem;border:1px solid var(--g300);border-radius:var(--r);font-size:.875rem;font-family:inherit;transition:border-color .2s;background:#fff}
-.fi:focus,.fs:focus,.ft:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
-.ft{resize:vertical;min-height:80px}
-.fr{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.fg { margin-bottom: 1.125rem; }
+.fl { display: block; font-size: .8125rem; font-weight: 600; color: var(--g600); margin-bottom: .375rem; letter-spacing: .01em; }
+.fi, .fs, .ft {
+  width: 100%;
+  padding: .625rem .875rem;
+  border: 1.5px solid var(--g200);
+  border-radius: var(--r);
+  font-size: .875rem;
+  font-family: inherit;
+  transition: all .2s var(--ease);
+  background: var(--g0);
+  color: var(--g800);
+}
+.fi:focus, .fs:focus, .ft:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+.fi::placeholder, .ft::placeholder { color: var(--g400); }
+.ft { resize: vertical; min-height: 88px; }
+.fr { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
-/* Auth */
-.auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;background:linear-gradient(135deg,var(--primary),#7c3aed)}
-.auth-card{background:#fff;border-radius:12px;padding:2rem;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.auth-title{font-size:1.5rem;font-weight:700;text-align:center;margin-bottom:.25rem}
-.auth-sub{text-align:center;color:var(--g500);margin-bottom:1.5rem;font-size:.875rem}
-.auth-foot{text-align:center;margin-top:1rem;font-size:.875rem;color:var(--g500)}
+/* Auth pages */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--g900);
+  position: relative;
+  overflow: hidden;
+}
+.auth-page::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(99,102,241,.15) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(6,182,212,.1) 0%, transparent 50%);
+  animation: fadeIn 1s var(--ease);
+}
+.auth-card {
+  background: var(--g0);
+  border-radius: var(--r-xl);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--sh-xl);
+  position: relative;
+  animation: scaleIn .4s var(--ease);
+}
+.auth-logo {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  font-size: 1.5rem;
+  box-shadow: 0 8px 24px rgba(99,102,241,.25);
+}
+.auth-title { font-size: 1.5rem; font-weight: 800; text-align: center; margin-bottom: .25rem; letter-spacing: -.03em; color: var(--g900); }
+.auth-sub { text-align: center; color: var(--g500); margin-bottom: 1.75rem; font-size: .875rem; }
+.auth-foot { text-align: center; margin-top: 1.25rem; font-size: .8125rem; color: var(--g500); }
+.auth-foot a { font-weight: 600; }
 
-/* Alert */
-.alert{padding:.75rem 1rem;border-radius:var(--r);font-size:.875rem;margin-bottom:1rem}
-.alert-e{background:var(--danger-light);color:var(--danger)}
+/* Alerts */
+.alert {
+  padding: .75rem 1rem;
+  border-radius: var(--r);
+  font-size: .8125rem;
+  margin-bottom: 1rem;
+  font-weight: 500;
+  animation: fadeUp .3s var(--ease);
+}
+.alert-e { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(239,68,68,.15); }
+.alert-s { background: var(--success-light); color: #065f46; border: 1px solid rgba(16,185,129,.15); }
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(120%);
+  background: var(--g900);
+  color: #fff;
+  padding: .75rem 1.25rem;
+  border-radius: 999px;
+  font-size: .8125rem;
+  font-weight: 500;
+  z-index: 300;
+  box-shadow: var(--sh-lg);
+  transition: transform .4s var(--ease-bounce);
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
 
 /* Stats */
-.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1.5rem}
-.sc{background:#fff;border-radius:var(--r);padding:1rem;box-shadow:var(--sh);text-align:center}
-.sv{font-size:1.5rem;font-weight:700;color:var(--primary)}
-.sl{font-size:.75rem;color:var(--g500);text-transform:uppercase;letter-spacing:.05em}
+.sg { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .75rem; margin-bottom: 1.5rem; }
+.sc {
+  background: var(--g0);
+  border-radius: var(--r);
+  padding: 1rem;
+  box-shadow: var(--sh-xs);
+  text-align: center;
+  border: 1px solid var(--g100);
+  transition: all .2s var(--ease);
+}
+.sc:hover { box-shadow: var(--sh-md); transform: translateY(-2px); }
+.sv { font-size: 1.375rem; font-weight: 800; color: var(--g900); letter-spacing: -.03em; line-height: 1.2; }
+.sl { font-size: .6875rem; color: var(--g500); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; margin-top: .125rem; }
 
 /* Activity items */
-.ai{display:flex;align-items:center;gap:1rem;padding:.875rem 0;border-bottom:1px solid var(--g100);cursor:pointer;transition:background .15s;text-decoration:none;color:inherit}
-.ai:last-child{border-bottom:none}
-.ai:hover{background:var(--g50);margin:0 -1.25rem;padding:.875rem 1.25rem}
-.a-icon{width:40px;height:40px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.125rem;flex-shrink:0}
-.a-info{flex:1;min-width:0}
-.a-title{font-weight:600;font-size:.9375rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.a-meta{font-size:.8125rem;color:var(--g500);display:flex;gap:.75rem;flex-wrap:wrap}
-.a-dogs{display:flex;gap:.25rem;flex-wrap:wrap;margin-top:.25rem}
-.dtag{display:inline-block;padding:.125rem .5rem;background:var(--primary-light);color:var(--primary);border-radius:999px;font-size:.75rem;font-weight:500}
+.ai {
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  padding: .875rem .125rem;
+  border-bottom: 1px solid var(--g100);
+  cursor: pointer;
+  transition: all .15s var(--ease);
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--r-sm);
+}
+.ai:last-child { border-bottom: none; }
+.ai:hover { background: var(--g50); padding-left: .5rem; padding-right: .5rem; }
+.a-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r);
+  background: linear-gradient(135deg, var(--primary-light), rgba(99,102,241,.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+.a-info { flex: 1; min-width: 0; }
+.a-title { font-weight: 600; font-size: .875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.01em; color: var(--g900); }
+.a-meta { font-size: .75rem; color: var(--g500); display: flex; gap: .625rem; flex-wrap: wrap; margin-top: .125rem; }
+.a-meta span { display: flex; align-items: center; gap: .25rem; }
+.a-dogs { display: flex; gap: .25rem; flex-wrap: wrap; margin-top: .375rem; }
+.dtag {
+  display: inline-block;
+  padding: .125rem .5rem;
+  background: linear-gradient(135deg, var(--primary-light), rgba(6,182,212,.08));
+  color: var(--primary);
+  border-radius: 999px;
+  font-size: .6875rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
 
 /* Dog cards */
-.dc{display:flex;align-items:center;gap:1rem;padding:1rem;background:#fff;border-radius:var(--r);box-shadow:var(--sh);margin-bottom:.75rem;cursor:pointer;transition:box-shadow .2s;text-decoration:none;color:inherit}
-.dc:hover{box-shadow:var(--shm)}
-.dav{width:48px;height:48px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
-.d-info{flex:1}
-.d-name{font-weight:600;font-size:1rem}
-.d-breed{font-size:.8125rem;color:var(--g500)}
+.dc {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.125rem;
+  background: var(--g0);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh);
+  margin-bottom: .625rem;
+  cursor: pointer;
+  transition: all .2s var(--ease);
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid var(--g100);
+}
+.dc:hover { box-shadow: var(--sh-md); transform: translateY(-2px); border-color: var(--g200); }
+.dc:active { transform: translateY(0); }
+.dav {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r);
+  background: linear-gradient(135deg, var(--primary-light), rgba(99,102,241,.12));
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+.d-info { flex: 1; }
+.d-name { font-weight: 700; font-size: .9375rem; letter-spacing: -.01em; color: var(--g900); }
+.d-breed { font-size: .8125rem; color: var(--g500); }
 
-/* Dog checkbox */
-.dcl{display:flex;flex-wrap:wrap;gap:.5rem}
-.dcb{display:flex;align-items:center;gap:.375rem;padding:.375rem .75rem;border:2px solid var(--g200);border-radius:999px;cursor:pointer;font-size:.875rem;transition:all .2s;user-select:none}
-.dcb.sel{border-color:var(--primary);background:var(--primary-light);color:var(--primary);font-weight:500}
+/* Dog checkboxes */
+.dcl { display: flex; flex-wrap: wrap; gap: .5rem; }
+.dcb {
+  display: flex;
+  align-items: center;
+  gap: .375rem;
+  padding: .4375rem .875rem;
+  border: 2px solid var(--g200);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: .8125rem;
+  font-weight: 500;
+  transition: all .2s var(--ease);
+  user-select: none;
+  color: var(--g600);
+}
+.dcb:hover { border-color: var(--g300); background: var(--g50); }
+.dcb.sel {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
 
-/* Record */
-.rec-ov{position:fixed;inset:0;background:var(--g900);color:#fff;z-index:200;display:flex;flex-direction:column}
-.rec-map{flex:1;background:var(--g700);position:relative}
-.rec-panel{padding:1.5rem;text-align:center}
-.rec-stats{display:flex;justify-content:space-around;margin-bottom:1.5rem}
-.rsv{font-size:2rem;font-weight:700}
-.rsl{font-size:.75rem;color:var(--g400);text-transform:uppercase}
-.rec-btn{width:72px;height:72px;border-radius:50%;border:4px solid #fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;transition:all .2s;color:#fff}
-.rec-btn.rec{background:var(--danger)}.rec-btn.go{background:var(--success)}
-.rec-acts{display:flex;align-items:center;justify-content:center;gap:2rem}
+/* Record overlay */
+.rec-ov { position: fixed; inset: 0; background: var(--g900); color: #fff; z-index: 200; display: flex; flex-direction: column; }
+.rec-map {
+  flex: 1;
+  background: linear-gradient(180deg, var(--g800) 0%, var(--g700) 100%);
+  position: relative;
+  overflow: hidden;
+}
+.rec-map::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(99,102,241,.08) 0%, transparent 70%);
+}
+.rec-panel {
+  padding: 1.5rem 1.5rem 2rem;
+  text-align: center;
+  background: var(--g900);
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.rec-stats { display: flex; justify-content: space-around; margin-bottom: 1.75rem; }
+.rsv { font-size: 2.25rem; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.rsl { font-size: .6875rem; color: var(--g400); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+.rec-btn {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 4px solid rgba(255,255,255,.9);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  transition: all .2s var(--ease);
+  color: #fff;
+}
+.rec-btn:active { transform: scale(.92); }
+.rec-btn.rec { background: var(--danger); box-shadow: 0 0 24px rgba(239,68,68,.4); }
+.rec-btn.go { background: var(--success); box-shadow: 0 0 24px rgba(16,185,129,.4); }
+.rec-btn.go:hover, .rec-btn.rec:hover { animation: pulse .8s var(--ease) infinite; }
+.rec-acts { display: flex; align-items: center; justify-content: center; gap: 2rem; }
 
 /* Page header */
-.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
-.pt{font-size:1.5rem;font-weight:700}
-
-/* Empty */
-.empty{text-align:center;padding:3rem 1rem;color:var(--g400)}
-.empty-i{font-size:3rem;margin-bottom:.5rem}
-
-/* Modal */
-.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;display:flex;align-items:center;justify-content:center;padding:1rem}
-.modal{background:#fff;border-radius:12px;padding:1.5rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
-.modal-t{font-size:1.25rem;font-weight:600;margin-bottom:1rem}
+.ph { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; }
+.pt { font-size: 1.625rem; font-weight: 800; letter-spacing: -.03em; color: var(--g900); }
 
 /* Section label */
-.sec{margin-bottom:.75rem;font-size:.875rem;color:var(--g500);text-transform:uppercase;letter-spacing:.05em}
-.back{display:inline-flex;align-items:center;gap:.375rem;color:var(--g500);font-size:.875rem;margin-bottom:1rem;cursor:pointer}
-.back:hover{color:var(--primary)}
+.sec { margin-bottom: .625rem; font-size: .6875rem; color: var(--g500); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
 
-@media(max-width:640px){
-  .nav-links{display:none}
-  .bnav{display:flex}
-  .main{padding:1rem;padding-bottom:5rem}
-  .fr{grid-template-columns:1fr}
-  .ph{flex-direction:column;align-items:flex-start;gap:.75rem}
-  .sg{grid-template-columns:repeat(2,1fr)}
+/* Empty state */
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--g400); }
+.empty-i { font-size: 2.5rem; margin-bottom: .75rem; opacity: .6; }
+.empty p { font-size: .875rem; max-width: 260px; margin: 0 auto; line-height: 1.5; }
+
+/* Back button */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: .375rem;
+  color: var(--g500);
+  font-size: .8125rem;
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+  cursor: pointer;
+  transition: color .2s var(--ease);
+  padding: .25rem 0;
 }
-.spin{display:inline-block;width:24px;height:24px;border:3px solid var(--g200);border-top-color:var(--primary);border-radius:50%;animation:sp .6s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-.loading{display:flex;align-items:center;justify-content:center;min-height:200px}
+.back:hover { color: var(--primary); }
+
+/* Modal */
+.modal-ov {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn .2s var(--ease);
+}
+.modal {
+  background: var(--g0);
+  border-radius: var(--r-xl);
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--sh-xl);
+  animation: scaleIn .3s var(--ease-bounce);
+}
+.modal-t { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; letter-spacing: -.02em; }
+
+/* Confirm dialog */
+.confirm-text { font-size: .875rem; color: var(--g600); line-height: 1.6; margin-bottom: 1.25rem; }
+
+/* Spinner */
+.spin {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--g200);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: sp .6s linear infinite;
+}
+@keyframes sp { to { transform: rotate(360deg); } }
+.loading { display: flex; align-items: center; justify-content: center; min-height: 240px; }
+
+/* Profile avatar */
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 auto .875rem;
+  box-shadow: 0 8px 24px rgba(99,102,241,.25);
+}
+
+/* Activity type breakdown */
+.type-row {
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  padding: .875rem 0;
+  border-bottom: 1px solid var(--g100);
+}
+.type-row:last-child { border-bottom: none; }
+.type-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  background: var(--g50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .nav-links { display: none; }
+  .bnav { display: flex; }
+  .main { padding: 1.25rem 1rem; padding-bottom: 5.5rem; }
+  .fr { grid-template-columns: 1fr; }
+  .ph { flex-direction: column; align-items: flex-start; gap: .75rem; }
+  .ph .btn-group { width: 100%; }
+  .ph .btn-group .btn { flex: 1; }
+  .sg { grid-template-columns: repeat(2, 1fr); }
+  .auth-card { padding: 2rem 1.5rem; }
+  .rsv { font-size: 1.875rem; }
+  .rec-panel { padding: 1.25rem 1.25rem 1.5rem; }
+}
+
+@media (min-width: 641px) {
+  .sg { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--g300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--g400); }
+
+/* Selection */
+::selection { background: var(--primary-light); color: var(--primary-hover); }
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div class="toast" id="toast"></div>
 <script>
-// ---- State & Helpers ----
+// ---- State ----
 const S = {
   token: localStorage.getItem('doglog_token'),
   user: null,
@@ -152,16 +632,42 @@ function setToken(t) {
 function $(sel, el) { return (el || document).querySelector(sel); }
 function $$(sel, el) { return [...(el || document).querySelectorAll(sel)]; }
 
+// ---- Toast ----
+let _toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ---- Helpers ----
 const ICONS = { run:'\u{1F3C3}', walk:'\u{1F6B6}', ski:'\u26F7\uFE0F', bike:'\u{1F6B2}', sled:'\u{1F6F7}', swim:'\u{1F3CA}', hike:'\u26F0\uFE0F', other:'\u2B50' };
 const TYPES = [['run','Run'],['walk','Walk'],['sled','Sled'],['ski','Skijoring'],['bike','Bikejoring'],['hike','Hike'],['swim','Swim'],['other','Other']];
 
 function icon(t) { return ICONS[t] || ICONS.other; }
-function fmtDur(s) { if (!s) return '0:00'; const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60; return h>0?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${m}:${String(sec).padStart(2,'0')}`; }
+function fmtDur(s) {
+  if (!s) return '0:00';
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = Math.round(s%60);
+  return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${m}:${String(sec).padStart(2,'0')}`;
+}
 function fmtDist(km) { return km ? Number(km).toFixed(1) : '0.0'; }
-function fmtDate(d) { if (!d) return ''; return new Date(d+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); }
-function fmtPace(km,s) { if (!km||!s) return '-'; const p=s/km; return Math.floor(p/60)+':'+String(Math.floor(p%60)).padStart(2,'0')+' /km'; }
+function fmtDate(d) { if (!d) return ''; return new Date(d+'T00:00:00').toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' }); }
+function fmtPace(km, s) { if (!km || !s) return '-'; const p = s/km; return Math.floor(p/60)+':'+String(Math.floor(p%60)).padStart(2,'0')+' /km'; }
 function today() { return new Date().toISOString().split('T')[0]; }
-function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function esc(s) { if (s == null) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// SVG icons
+const SVG = {
+  arrow: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>',
+  plus: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  rec: '<svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>',
+  edit: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  trash: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>',
+  dist: '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>',
+  clock: '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+};
 
 // ---- API ----
 async function api(path, opts = {}) {
@@ -179,104 +685,131 @@ function nav(page, data) {
   S.page = page;
   S.pageData = data || null;
   render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ---- Render ----
 function render() {
   const app = $('#app');
-  if (!S.user && S.page !== 'register') { S.page = 'login'; }
-  if (S.user && (S.page === 'login' || S.page === 'register')) { S.page = 'dashboard'; }
+  if (!S.user && S.page !== 'register') S.page = 'login';
+  if (S.user && (S.page === 'login' || S.page === 'register')) S.page = 'dashboard';
 
   if (S.page === 'login') { app.innerHTML = loginPage(); bindLogin(); return; }
   if (S.page === 'register') { app.innerHTML = registerPage(); bindRegister(); return; }
   if (S.page === 'record') { app.innerHTML = recordPage(); bindRecord(); return; }
 
-  // Wrap in layout
   app.innerHTML = layoutHTML() + '<div class="main" id="content"></div>' + bottomNavHTML();
   bindNav();
   const c = $('#content');
+  c.innerHTML = '<div class="loading"><div class="spin"></div></div>';
 
-  if (S.page === 'dashboard') { c.innerHTML = '<div class="loading"><div class="spin"></div></div>'; loadDashboard(c); }
-  else if (S.page === 'dogs') { c.innerHTML = '<div class="loading"><div class="spin"></div></div>'; loadDogs(c); }
-  else if (S.page === 'dog-detail') { c.innerHTML = '<div class="loading"><div class="spin"></div></div>'; loadDogDetail(c); }
-  else if (S.page === 'activities') { c.innerHTML = '<div class="loading"><div class="spin"></div></div>'; loadActivities(c); }
-  else if (S.page === 'activity-form') { c.innerHTML = '<div class="loading"><div class="spin"></div></div>'; loadActivityForm(c); }
-  else if (S.page === 'save-recording') { renderSaveRecording(c); }
-  else if (S.page === 'profile') { c.innerHTML = '<div class="loading"><div class="spin"></div></div>'; loadProfile(c); }
+  if (S.page === 'dashboard') loadDashboard(c);
+  else if (S.page === 'dogs') loadDogs(c);
+  else if (S.page === 'dog-detail') loadDogDetail(c);
+  else if (S.page === 'activities') loadActivities(c);
+  else if (S.page === 'activity-form') loadActivityForm(c);
+  else if (S.page === 'save-recording') renderSaveRecording(c);
+  else if (S.page === 'profile') loadProfile(c);
 }
 
 // ---- Layout ----
 function layoutHTML() {
-  return `<nav class="navbar"><span class="navbar-brand" onclick="nav('dashboard')">DogLog</span><div class="nav-links">
-    <a href="#" data-p="dashboard">Dashboard</a><a href="#" data-p="dogs">Dogs</a><a href="#" data-p="activities">Activities</a><a href="#" data-p="profile">Profile</a>
-    <button onclick="logout()">Log out</button></div></nav>`;
+  const p = S.page;
+  const a = (pg) => p === pg || p.startsWith(pg) ? 'active' : '';
+  return `<nav class="navbar">
+    <span class="navbar-brand" onclick="nav('dashboard')"><span class="brand-icon">\u{1F43E}</span> DogLog</span>
+    <div class="nav-links">
+      <a href="#" data-p="dashboard" class="${a('dashboard')}">Dashboard</a>
+      <a href="#" data-p="dogs" class="${a('dog')}">Dogs</a>
+      <a href="#" data-p="activities" class="${a('activit')}">Activities</a>
+      <a href="#" data-p="profile" class="${a('profile')}">Profile</a>
+      <button onclick="logout()">Log out</button>
+    </div></nav>`;
 }
 
 function bottomNavHTML() {
   const p = S.page;
-  const a = (pg) => p === pg ? 'active' : '';
+  const a = (pg) => p === pg || (pg !== 'dashboard' && p.startsWith(pg)) ? 'active' : (pg === 'dashboard' && p === 'dashboard' ? 'active' : '');
   return `<nav class="bnav">
     <a href="#" data-p="dashboard" class="${a('dashboard')}"><span class="ni">\u2302</span><span>Home</span></a>
-    <a href="#" data-p="dogs" class="${a('dogs')}"><span class="ni">\u{1F436}</span><span>Dogs</span></a>
+    <a href="#" data-p="dogs" class="${a('dog')}"><span class="ni">\u{1F436}</span><span>Dogs</span></a>
     <a href="#" data-p="record" class="${a('record')}"><span class="ni">\u23FA</span><span>Record</span></a>
-    <a href="#" data-p="activities" class="${a('activities')}"><span class="ni">\u2605</span><span>Activities</span></a>
+    <a href="#" data-p="activities" class="${a('activit')}"><span class="ni">\u2605</span><span>Activities</span></a>
     <a href="#" data-p="profile" class="${a('profile')}"><span class="ni">\u{1F464}</span><span>Profile</span></a>
   </nav>`;
 }
 
 function bindNav() {
-  $$('[data-p]').forEach(el => {
-    el.onclick = (e) => { e.preventDefault(); nav(el.dataset.p); };
-  });
+  $$('[data-p]').forEach(el => { el.onclick = e => { e.preventDefault(); nav(el.dataset.p); }; });
 }
 
 function logout() { setToken(null); S.user = null; nav('login'); }
 
-// ---- Auth Pages ----
+// ---- Auth ----
 function loginPage() {
   return `<div class="auth-page"><div class="auth-card">
-    <h1 class="auth-title">DogLog</h1><p class="auth-sub">Log in to track your dog training</p>
+    <div class="auth-logo">\u{1F43E}</div>
+    <h1 class="auth-title">Welcome back</h1>
+    <p class="auth-sub">Sign in to your DogLog account</p>
     <div id="err"></div>
-    <form id="f"><div class="fg"><label class="fl">Username</label><input class="fi" name="username" required autofocus></div>
-    <div class="fg"><label class="fl">Password</label><input class="fi" name="password" type="password" required></div>
-    <button class="btn btn-p btn-block btn-lg" type="submit">Log in</button></form>
-    <p class="auth-foot">Don't have an account? <a href="#" id="go-reg">Sign up</a></p></div></div>`;
+    <form id="f">
+      <div class="fg"><label class="fl">Username</label><input class="fi" name="username" required autofocus autocomplete="username"></div>
+      <div class="fg"><label class="fl">Password</label><input class="fi" name="password" type="password" required autocomplete="current-password"></div>
+      <button class="btn btn-p btn-block btn-lg" type="submit" id="login-btn">Sign in</button>
+    </form>
+    <p class="auth-foot">Don't have an account? <a href="#" id="go-reg">Create one</a></p>
+  </div></div>`;
 }
 
 function bindLogin() {
-  $('#go-reg').onclick = (e) => { e.preventDefault(); nav('register'); };
-  $('#f').onsubmit = async (e) => {
+  $('#go-reg').onclick = e => { e.preventDefault(); nav('register'); };
+  $('#f').onsubmit = async e => {
     e.preventDefault();
+    const btn = $('#login-btn');
+    btn.textContent = 'Signing in...'; btn.disabled = true;
     const fd = new FormData(e.target);
     try {
-      const d = await api('/users/login', { method: 'POST', body: JSON.stringify({ username: fd.get('username'), password: fd.get('password') }) });
+      const d = await api('/users/login', { method:'POST', body: JSON.stringify({ username:fd.get('username'), password:fd.get('password') }) });
       setToken(d.token); S.user = d.user; nav('dashboard');
-    } catch (err) { $('#err').innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
+    } catch (err) {
+      $('#err').innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`;
+      btn.textContent = 'Sign in'; btn.disabled = false;
+    }
   };
 }
 
 function registerPage() {
   return `<div class="auth-page"><div class="auth-card">
-    <h1 class="auth-title">Create Account</h1><p class="auth-sub">Start tracking your dog training</p>
+    <div class="auth-logo">\u{1F43E}</div>
+    <h1 class="auth-title">Create account</h1>
+    <p class="auth-sub">Start tracking your dogs' training</p>
     <div id="err"></div>
-    <form id="f"><div class="fg"><label class="fl">Display Name</label><input class="fi" name="displayName" required autofocus placeholder="Your name"></div>
-    <div class="fg"><label class="fl">Username</label><input class="fi" name="username" required minlength="3" placeholder="At least 3 characters"></div>
-    <div class="fg"><label class="fl">Password</label><input class="fi" name="password" type="password" required minlength="8" placeholder="At least 8 characters"></div>
-    <div class="fg"><label class="fl">Confirm Password</label><input class="fi" name="confirm" type="password" required></div>
-    <button class="btn btn-p btn-block btn-lg" type="submit">Create account</button></form>
-    <p class="auth-foot">Already have an account? <a href="#" id="go-login">Log in</a></p></div></div>`;
+    <form id="f">
+      <div class="fg"><label class="fl">Display Name</label><input class="fi" name="displayName" required autofocus placeholder="Your name"></div>
+      <div class="fg"><label class="fl">Username</label><input class="fi" name="username" required minlength="3" placeholder="At least 3 characters" autocomplete="username"></div>
+      <div class="fg"><label class="fl">Password</label><input class="fi" name="password" type="password" required minlength="8" placeholder="At least 8 characters" autocomplete="new-password"></div>
+      <div class="fg"><label class="fl">Confirm Password</label><input class="fi" name="confirm" type="password" required autocomplete="new-password"></div>
+      <button class="btn btn-p btn-block btn-lg" type="submit" id="reg-btn">Create account</button>
+    </form>
+    <p class="auth-foot">Already have an account? <a href="#" id="go-login">Sign in</a></p>
+  </div></div>`;
 }
 
 function bindRegister() {
-  $('#go-login').onclick = (e) => { e.preventDefault(); nav('login'); };
-  $('#f').onsubmit = async (e) => {
+  $('#go-login').onclick = e => { e.preventDefault(); nav('login'); };
+  $('#f').onsubmit = async e => {
     e.preventDefault();
+    const btn = $('#reg-btn');
     const fd = new FormData(e.target);
     if (fd.get('password') !== fd.get('confirm')) { $('#err').innerHTML = '<div class="alert alert-e">Passwords do not match</div>'; return; }
+    btn.textContent = 'Creating...'; btn.disabled = true;
     try {
-      const d = await api('/users/register', { method: 'POST', body: JSON.stringify({ username: fd.get('username'), password: fd.get('password'), displayName: fd.get('displayName') }) });
+      const d = await api('/users/register', { method:'POST', body: JSON.stringify({ username:fd.get('username'), password:fd.get('password'), displayName:fd.get('displayName') }) });
       setToken(d.token); S.user = d.user; nav('dashboard');
-    } catch (err) { $('#err').innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
+    } catch (err) {
+      $('#err').innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`;
+      btn.textContent = 'Create account'; btn.disabled = false;
+    }
   };
 }
 
@@ -286,26 +819,35 @@ async function loadDashboard(c) {
     const [stats, activities, dogs] = await Promise.all([api('/activities/stats'), api('/activities'), api('/dogs')]);
     const recent = activities.slice(0, 5);
     c.innerHTML = `
-      <div class="ph"><h1 class="pt">Welcome, ${esc(S.user.displayName)}</h1>
-        <div class="btn-group"><a href="#" class="btn btn-s" onclick="event.preventDefault();nav('record')">Record Activity</a>
-        <a href="#" class="btn btn-p" onclick="event.preventDefault();nav('activity-form')">Add Manual</a></div></div>
+      <div class="ph">
+        <div><p style="color:var(--g500);font-size:.8125rem;font-weight:500;margin-bottom:.125rem">Good ${new Date().getHours()<12?'morning':new Date().getHours()<18?'afternoon':'evening'},</p>
+          <h1 class="pt">${esc(S.user.displayName)}</h1></div>
+        <div class="btn-group">
+          <a href="#" class="btn btn-s" onclick="event.preventDefault();nav('record')">${SVG.rec} Record</a>
+          <a href="#" class="btn btn-p" onclick="event.preventDefault();nav('activity-form')">${SVG.plus} Manual</a>
+        </div>
+      </div>
+
       <div class="sec">This Week</div>
       <div class="sg">
         <div class="sc"><div class="sv">${stats.recentWeek.activities}</div><div class="sl">Activities</div></div>
-        <div class="sc"><div class="sv">${fmtDist(stats.recentWeek.distance_km)}</div><div class="sl">Distance (km)</div></div>
+        <div class="sc"><div class="sv">${fmtDist(stats.recentWeek.distance_km)}</div><div class="sl">Kilometers</div></div>
         <div class="sc"><div class="sv">${fmtDur(stats.recentWeek.duration_seconds)}</div><div class="sl">Duration</div></div>
       </div>
+
       <div class="sec">All Time</div>
       <div class="sg">
         <div class="sc"><div class="sv">${stats.overall.total_activities}</div><div class="sl">Activities</div></div>
         <div class="sc"><div class="sv">${fmtDist(stats.overall.total_distance_km)}</div><div class="sl">Total km</div></div>
         <div class="sc"><div class="sv">${fmtDur(stats.overall.total_duration_seconds)}</div><div class="sl">Total Time</div></div>
-        <div class="sc"><div class="sv">${dogs.length}</div><div class="sl">Dogs</div></div>
       </div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Recent Activities</span>
-        <a href="#" class="btn btn-o btn-sm" onclick="event.preventDefault();nav('activities')">View all</a></div>
-        ${recent.length === 0 ? '<div class="empty"><div class="empty-i">\u{1F3C3}</div><p>No activities yet. Record or add your first one!</p></div>' :
-          recent.map(a => activityItemHTML(a)).join('')}
+
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Recent Activities</span>
+          <a href="#" class="btn btn-o btn-sm" onclick="event.preventDefault();nav('activities')">View all</a></div>
+        ${recent.length === 0
+          ? '<div class="empty"><div class="empty-i">\u{1F3C3}</div><p>No activities yet. Record or add your first one!</p></div>'
+          : recent.map(activityItemHTML).join('')}
       </div>`;
   } catch (err) { c.innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
 }
@@ -313,9 +855,17 @@ async function loadDashboard(c) {
 function activityItemHTML(a) {
   const dogs = (a.dogs||[]).map(d => `<span class="dtag">${esc(d.name)}</span>`).join('');
   return `<div class="ai" onclick="nav('activity-form',{id:${a.id}})">
-    <div class="a-icon">${icon(a.type)}</div><div class="a-info"><div class="a-title">${esc(a.title)}</div>
-    <div class="a-meta"><span>${fmtDate(a.date)}</span><span>${fmtDist(a.distance_km)} km</span><span>${fmtDur(a.duration_seconds)}</span></div>
-    ${dogs ? `<div class="a-dogs">${dogs}</div>` : ''}</div></div>`;
+    <div class="a-icon">${icon(a.type)}</div>
+    <div class="a-info">
+      <div class="a-title">${esc(a.title)}</div>
+      <div class="a-meta">
+        <span>${fmtDate(a.date)}</span>
+        <span>${SVG.dist} ${fmtDist(a.distance_km)} km</span>
+        <span>${SVG.clock} ${fmtDur(a.duration_seconds)}</span>
+      </div>
+      ${dogs ? `<div class="a-dogs">${dogs}</div>` : ''}
+    </div>
+  </div>`;
 }
 
 // ---- Dogs ----
@@ -323,62 +873,72 @@ async function loadDogs(c) {
   try {
     const dogs = await api('/dogs');
     c.innerHTML = `<div class="ph"><h1 class="pt">My Dogs</h1>
-      <button class="btn btn-p" onclick="showDogModal()">+ Add Dog</button></div>
-      <div id="dog-list">${dogs.length === 0 ? '<div class="empty"><div class="empty-i">\u{1F436}</div><p>No dogs added yet. Add your first dog!</p></div>' :
-        dogs.map(d => `<div class="dc" onclick="nav('dog-detail',{id:${d.id}})">
-          <div class="dav">\u{1F436}</div><div class="d-info"><div class="d-name">${esc(d.name)}</div>
-          <div class="d-breed">${[d.breed, d.weight_kg?d.weight_kg+' kg':null].filter(Boolean).join(' \u00B7 ')}</div></div>
-          <div class="btn-group"><button class="btn btn-o btn-sm" onclick="event.stopPropagation();showDogModal(${d.id})">Edit</button>
-          <button class="btn btn-d btn-sm" onclick="event.stopPropagation();deleteDog(${d.id},'${esc(d.name)}')">Delete</button></div></div>`).join('')}</div>
-      <div id="dog-modal"></div>`;
+      <button class="btn btn-p" onclick="showDogModal()">${SVG.plus} Add Dog</button></div>
+      <div id="dog-list">${dogs.length === 0
+        ? '<div class="empty"><div class="empty-i">\u{1F436}</div><p>No dogs added yet. Add your first companion!</p></div>'
+        : dogs.map(d => `<div class="dc" onclick="nav('dog-detail',{id:${d.id}})">
+            <div class="dav">\u{1F436}</div>
+            <div class="d-info"><div class="d-name">${esc(d.name)}</div>
+              <div class="d-breed">${[d.breed, d.weight_kg ? d.weight_kg+' kg' : null].filter(Boolean).join(' \u00B7 ') || 'No details'}</div></div>
+            <div class="btn-group">
+              <button class="btn btn-o btn-sm" onclick="event.stopPropagation();showDogModal(${d.id})">${SVG.edit}</button>
+              <button class="btn btn-d btn-sm" onclick="event.stopPropagation();deleteDog(${d.id},'${esc(d.name)}')">${SVG.trash}</button>
+            </div></div>`).join('')}
+      </div><div id="dog-modal"></div>`;
     window._dogs = dogs;
   } catch (err) { c.innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
 }
 
 window.showDogModal = async function(id) {
-  let dog = id ? (window._dogs||[]).find(d=>d.id===id) : null;
-  if (id && !dog) { try { dog = await api('/dogs/'+id); } catch(e) {} }
+  let dog = id ? (window._dogs||[]).find(d => d.id === id) : null;
+  if (id && !dog) try { dog = await api('/dogs/'+id); } catch(e) {}
   const m = $('#dog-modal');
   m.innerHTML = `<div class="modal-ov" onclick="$('#dog-modal').innerHTML=''"><div class="modal" onclick="event.stopPropagation()">
-    <h2 class="modal-t">${dog?'Edit Dog':'Add Dog'}</h2><div id="dog-err"></div>
+    <h2 class="modal-t">${dog ? 'Edit Dog' : 'Add Dog'}</h2><div id="dog-err"></div>
     <form id="dog-f">
-      <div class="fg"><label class="fl">Name *</label><input class="fi" name="name" required autofocus value="${dog?esc(dog.name):''}"></div>
-      <div class="fr"><div class="fg"><label class="fl">Breed</label><input class="fi" name="breed" value="${dog&&dog.breed?esc(dog.breed):''}" placeholder="e.g. Alaskan Husky"></div>
-      <div class="fg"><label class="fl">Weight (kg)</label><input class="fi" name="weightKg" type="number" step="0.1" value="${dog&&dog.weight_kg?dog.weight_kg:''}"></div></div>
-      <div class="fg"><label class="fl">Birth Date</label><input class="fi" name="birthDate" type="date" value="${dog&&dog.birth_date?dog.birth_date:''}"></div>
-      <div class="fg"><label class="fl">Notes</label><textarea class="ft" name="notes">${dog&&dog.notes?esc(dog.notes):''}</textarea></div>
-      <div class="btn-group"><button class="btn btn-p" type="submit">${dog?'Save Changes':'Add Dog'}</button>
-      <button class="btn btn-o" type="button" onclick="$('#dog-modal').innerHTML=''">Cancel</button></div>
+      <div class="fg"><label class="fl">Name *</label><input class="fi" name="name" required autofocus value="${dog ? esc(dog.name) : ''}"></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Breed</label><input class="fi" name="breed" value="${dog && dog.breed ? esc(dog.breed) : ''}" placeholder="e.g. Alaskan Husky"></div>
+        <div class="fg"><label class="fl">Weight (kg)</label><input class="fi" name="weightKg" type="number" step="0.1" value="${dog && dog.weight_kg ? dog.weight_kg : ''}"></div>
+      </div>
+      <div class="fg"><label class="fl">Birth Date</label><input class="fi" name="birthDate" type="date" value="${dog && dog.birth_date ? dog.birth_date : ''}"></div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="ft" name="notes">${dog && dog.notes ? esc(dog.notes) : ''}</textarea></div>
+      <div class="btn-group">
+        <button class="btn btn-p" type="submit">${dog ? 'Save Changes' : 'Add Dog'}</button>
+        <button class="btn btn-o" type="button" onclick="$('#dog-modal').innerHTML=''">Cancel</button>
+      </div>
     </form></div></div>`;
-  $('#dog-f').onsubmit = async (e) => {
+  $('#dog-f').onsubmit = async e => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const payload = { name: fd.get('name'), breed: fd.get('breed')||null, birthDate: fd.get('birthDate')||null, weightKg: fd.get('weightKg')?Number(fd.get('weightKg')):null, notes: fd.get('notes')||null };
+    const payload = { name:fd.get('name'), breed:fd.get('breed')||null, birthDate:fd.get('birthDate')||null, weightKg:fd.get('weightKg')?Number(fd.get('weightKg')):null, notes:fd.get('notes')||null };
     try {
       if (dog) await api('/dogs/'+dog.id, { method:'PUT', body:JSON.stringify(payload) });
       else await api('/dogs', { method:'POST', body:JSON.stringify(payload) });
+      toast(dog ? 'Dog updated' : 'Dog added');
       nav('dogs');
     } catch(err) { $('#dog-err').innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
   };
 };
 
 window.deleteDog = async function(id, name) {
-  if (!confirm('Delete '+name+'? This will also remove them from all activities.')) return;
-  try { await api('/dogs/'+id, {method:'DELETE'}); nav('dogs'); } catch(err) { alert(err.message); }
+  if (!confirm('Delete ' + name + '? This will also remove them from all activities.')) return;
+  try { await api('/dogs/'+id, { method:'DELETE' }); toast(name + ' deleted'); nav('dogs'); } catch(err) { alert(err.message); }
 };
 
 // ---- Dog Detail ----
 async function loadDogDetail(c) {
   try {
     const { dog, stats, activities } = await api('/dogs/'+S.pageData.id+'/stats');
-    const info = [dog.breed, dog.weight_kg?dog.weight_kg+' kg':null, dog.birth_date?'Born '+fmtDate(dog.birth_date):null].filter(Boolean).join(' \u00B7 ');
+    const info = [dog.breed, dog.weight_kg ? dog.weight_kg+' kg' : null, dog.birth_date ? 'Born '+fmtDate(dog.birth_date) : null].filter(Boolean).join(' \u00B7 ');
     c.innerHTML = `
-      <div class="back" onclick="nav('dogs')">\u2190 Back to Dogs</div>
-      <div class="card" style="text-align:center;padding-top:2rem">
-        <div class="dav" style="width:72px;height:72px;font-size:2.5rem;margin:0 auto .75rem">\u{1F436}</div>
-        <h1 style="font-size:1.5rem;font-weight:700">${esc(dog.name)}</h1>
-        <p style="color:var(--g500);font-size:.875rem">${esc(info)}</p>
-        ${dog.notes?`<p style="margin-top:.5rem;font-size:.875rem;color:var(--g600)">${esc(dog.notes)}</p>`:''}</div>
+      <div class="back" onclick="nav('dogs')">${SVG.arrow} Back to Dogs</div>
+      <div class="card" style="text-align:center;padding:2rem 1.25rem">
+        <div class="dav" style="width:72px;height:72px;font-size:2.5rem;margin:0 auto .75rem;border-radius:50%">\u{1F436}</div>
+        <h1 style="font-size:1.5rem;font-weight:800;letter-spacing:-.03em;color:var(--g900)">${esc(dog.name)}</h1>
+        ${info ? `<p style="color:var(--g500);font-size:.8125rem;margin-top:.25rem">${esc(info)}</p>` : ''}
+        ${dog.notes ? `<p style="margin-top:.5rem;font-size:.8125rem;color:var(--g600);max-width:360px;margin-left:auto;margin-right:auto">${esc(dog.notes)}</p>` : ''}
+      </div>
       <div class="sec">Statistics</div>
       <div class="sg">
         <div class="sc"><div class="sv">${stats.total_activities}</div><div class="sl">Activities</div></div>
@@ -389,8 +949,10 @@ async function loadDogDetail(c) {
         <div class="sc"><div class="sv">${fmtDur(Math.round(stats.avg_duration_seconds))}</div><div class="sl">Avg Duration</div></div>
       </div>
       <div class="card"><div class="card-hdr"><span class="card-title">Activity History</span></div>
-        ${activities.length===0?'<div class="empty"><p>No activities recorded for '+esc(dog.name)+' yet.</p></div>':
-          activities.map(a=>activityItemHTML(a)).join('')}</div>`;
+        ${activities.length === 0
+          ? `<div class="empty"><p>No activities recorded for ${esc(dog.name)} yet.</p></div>`
+          : activities.map(activityItemHTML).join('')}
+      </div>`;
   } catch(err) { c.innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
 }
 
@@ -399,24 +961,31 @@ async function loadActivities(c) {
   try {
     const activities = await api('/activities');
     c.innerHTML = `<div class="ph"><h1 class="pt">Activities</h1>
-      <div class="btn-group"><a href="#" class="btn btn-s" onclick="event.preventDefault();nav('record')">Record</a>
-      <a href="#" class="btn btn-p" onclick="event.preventDefault();nav('activity-form')">+ Add Manual</a></div></div>
-      ${activities.length===0?'<div class="empty"><div class="empty-i">\u{1F3C3}</div><p>No activities yet.</p></div>':
-        '<div class="card">'+activities.map(a=>`<div class="ai" style="display:flex">
-          <div style="display:flex;align-items:center;gap:1rem;flex:1;cursor:pointer" onclick="nav('activity-form',{id:${a.id}})">
-            <div class="a-icon">${icon(a.type)}</div><div class="a-info"><div class="a-title">${esc(a.title)}</div>
-            <div class="a-meta"><span>${fmtDate(a.date)}</span><span>${fmtDist(a.distance_km)} km</span><span>${fmtDur(a.duration_seconds)}</span></div>
-            ${(a.dogs||[]).length?`<div class="a-dogs">${a.dogs.map(d=>`<span class="dtag">${esc(d.name)}</span>`).join('')}</div>`:''}</div></div>
-          <button class="btn btn-d btn-sm" onclick="event.stopPropagation();delActivity(${a.id},'${esc(a.title)}')">Delete</button></div>`).join('')+'</div>'}`;
+      <div class="btn-group">
+        <a href="#" class="btn btn-s" onclick="event.preventDefault();nav('record')">${SVG.rec} Record</a>
+        <a href="#" class="btn btn-p" onclick="event.preventDefault();nav('activity-form')">${SVG.plus} Manual</a>
+      </div></div>
+      ${activities.length === 0
+        ? '<div class="empty"><div class="empty-i">\u{1F3C3}</div><p>No activities yet. Record or add your first activity!</p></div>'
+        : '<div class="card">' + activities.map(a => `<div class="ai" style="display:flex">
+            <div style="display:flex;align-items:center;gap:.875rem;flex:1;cursor:pointer" onclick="nav('activity-form',{id:${a.id}})">
+              <div class="a-icon">${icon(a.type)}</div>
+              <div class="a-info"><div class="a-title">${esc(a.title)}</div>
+                <div class="a-meta"><span>${fmtDate(a.date)}</span><span>${SVG.dist} ${fmtDist(a.distance_km)} km</span><span>${SVG.clock} ${fmtDur(a.duration_seconds)}</span></div>
+                ${(a.dogs||[]).length ? `<div class="a-dogs">${a.dogs.map(d => `<span class="dtag">${esc(d.name)}</span>`).join('')}</div>` : ''}
+              </div>
+            </div>
+            <button class="btn btn-d btn-sm" onclick="event.stopPropagation();delActivity(${a.id},'${esc(a.title)}')">${SVG.trash}</button>
+          </div>`).join('') + '</div>'}`;
   } catch(err) { c.innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
 }
 
 window.delActivity = async function(id, title) {
-  if (!confirm('Delete "'+title+'"?')) return;
-  try { await api('/activities/'+id, {method:'DELETE'}); nav('activities'); } catch(err) { alert(err.message); }
+  if (!confirm('Delete "' + title + '"?')) return;
+  try { await api('/activities/'+id, { method:'DELETE' }); toast('Activity deleted'); nav('activities'); } catch(err) { alert(err.message); }
 };
 
-// ---- Activity Form (create/edit) ----
+// ---- Activity Form ----
 async function loadActivityForm(c) {
   try {
     const dogs = await api('/dogs');
@@ -426,49 +995,57 @@ async function loadActivityForm(c) {
 
     const totalSec = a ? (a.duration_seconds||0) : 0;
     const h = Math.floor(totalSec/3600), m = Math.floor((totalSec%3600)/60), s = totalSec%60;
-    const selDogs = a ? (a.dogs||[]).map(d=>d.id) : [];
+    const selDogs = a ? (a.dogs||[]).map(d => d.id) : [];
 
-    const typeOpts = TYPES.map(([v,l])=>`<option value="${v}" ${a&&a.type===v?'selected':''}>${l}</option>`).join('');
-    const dogChecks = dogs.length===0 ? '<p style="font-size:.875rem;color:var(--g500)">No dogs added yet. <a href="#" onclick="event.preventDefault();nav(\'dogs\')">Add dogs first</a></p>' :
-      '<div class="dcl">' + dogs.map(d => `<label class="dcb ${selDogs.includes(d.id)?'sel':''}" data-did="${d.id}">${esc(d.name)}</label>`).join('') + '</div>';
+    const typeOpts = TYPES.map(([v,l]) => `<option value="${v}" ${a && a.type===v ? 'selected' : ''}>${l}</option>`).join('');
+    const dogChecks = dogs.length === 0
+      ? '<p style="font-size:.8125rem;color:var(--g500)">No dogs added yet. <a href="#" onclick="event.preventDefault();nav(\'dogs\')">Add dogs first</a></p>'
+      : '<div class="dcl">' + dogs.map(d => `<label class="dcb ${selDogs.includes(d.id)?'sel':''}" data-did="${d.id}">\u{1F436} ${esc(d.name)}</label>`).join('') + '</div>';
 
     c.innerHTML = `
-      <div class="back" onclick="nav('activities')">\u2190 Back to Activities</div>
-      <h1 class="pt" style="margin-bottom:1.5rem">${isEdit?'Edit Activity':'Add Activity'}</h1>
+      <div class="back" onclick="nav('activities')">${SVG.arrow} Back to Activities</div>
+      <h1 class="pt" style="margin-bottom:1.5rem">${isEdit ? 'Edit Activity' : 'Add Activity'}</h1>
       <div id="af-err"></div>
       <div class="card"><form id="af">
-        <div class="fg"><label class="fl">Title *</label><input class="fi" name="title" required placeholder="e.g. Morning trail run" value="${a?esc(a.title):''}"></div>
-        <div class="fr"><div class="fg"><label class="fl">Type</label><select class="fs" name="type">${typeOpts}</select></div>
-        <div class="fg"><label class="fl">Date *</label><input class="fi" name="date" type="date" required value="${a?a.date:today()}"></div></div>
-        <div class="fg"><label class="fl">Distance (km)</label><input class="fi" name="distanceKm" type="number" step="0.01" min="0" placeholder="0.0" value="${a&&a.distance_km?a.distance_km:''}"></div>
+        <div class="fg"><label class="fl">Title *</label><input class="fi" name="title" required placeholder="e.g. Morning trail run" value="${a ? esc(a.title) : ''}"></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Type</label><select class="fs" name="type">${typeOpts}</select></div>
+          <div class="fg"><label class="fl">Date *</label><input class="fi" name="date" type="date" required value="${a ? a.date : today()}"></div>
+        </div>
+        <div class="fg"><label class="fl">Distance (km)</label><input class="fi" name="distanceKm" type="number" step="0.01" min="0" placeholder="0.0" value="${a && a.distance_km ? a.distance_km : ''}"></div>
         <div class="fg"><label class="fl">Duration</label>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem">
             <input class="fi" name="hours" type="number" min="0" placeholder="Hours" value="${h||''}">
             <input class="fi" name="minutes" type="number" min="0" max="59" placeholder="Minutes" value="${m||''}">
-            <input class="fi" name="seconds" type="number" min="0" max="59" placeholder="Seconds" value="${s||''}"></div></div>
+            <input class="fi" name="seconds" type="number" min="0" max="59" placeholder="Seconds" value="${s||''}">
+          </div></div>
         <div class="fg"><label class="fl">Dogs</label>${dogChecks}</div>
-        <div class="fg"><label class="fl">Notes</label><textarea class="ft" name="notes">${a&&a.notes?esc(a.notes):''}</textarea></div>
-        <div class="btn-group"><button class="btn btn-p" type="submit">${isEdit?'Save Changes':'Add Activity'}</button>
-        <button class="btn btn-o" type="button" onclick="nav('activities')">Cancel</button></div>
+        <div class="fg"><label class="fl">Notes</label><textarea class="ft" name="notes" placeholder="How did it go?">${a && a.notes ? esc(a.notes) : ''}</textarea></div>
+        <div class="btn-group">
+          <button class="btn btn-p btn-lg" type="submit" id="af-btn">${isEdit ? 'Save Changes' : 'Add Activity'}</button>
+          <button class="btn btn-o btn-lg" type="button" onclick="nav('activities')">Cancel</button>
+        </div>
       </form></div>`;
 
-    // Dog toggle
-    $$('.dcb').forEach(el => {
-      el.onclick = () => el.classList.toggle('sel');
-    });
+    $$('.dcb').forEach(el => { el.onclick = () => el.classList.toggle('sel'); });
 
-    $('#af').onsubmit = async (e) => {
+    $('#af').onsubmit = async e => {
       e.preventDefault();
+      const btn = $('#af-btn');
+      btn.disabled = true; btn.textContent = 'Saving...';
       const fd = new FormData(e.target);
       const dogIds = $$('.dcb.sel').map(el => Number(el.dataset.did));
       const dur = (parseInt(fd.get('hours'))||0)*3600 + (parseInt(fd.get('minutes'))||0)*60 + (parseInt(fd.get('seconds'))||0);
-      const payload = { title: fd.get('title'), type: fd.get('type'), distanceKm: parseFloat(fd.get('distanceKm'))||0,
-        durationSeconds: dur, date: fd.get('date'), notes: fd.get('notes')||null, dogIds };
+      const payload = { title:fd.get('title'), type:fd.get('type'), distanceKm:parseFloat(fd.get('distanceKm'))||0, durationSeconds:dur, date:fd.get('date'), notes:fd.get('notes')||null, dogIds };
       try {
         if (isEdit) await api('/activities/'+S.pageData.id, { method:'PUT', body:JSON.stringify(payload) });
         else await api('/activities', { method:'POST', body:JSON.stringify(payload) });
+        toast(isEdit ? 'Activity updated' : 'Activity added');
         nav('activities');
-      } catch(err) { $('#af-err').innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
+      } catch(err) {
+        $('#af-err').innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`;
+        btn.disabled = false; btn.textContent = isEdit ? 'Save Changes' : 'Add Activity';
+      }
     };
   } catch(err) { c.innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
 }
@@ -476,36 +1053,42 @@ async function loadActivityForm(c) {
 // ---- Record Activity ----
 let rec = { status:'idle', elapsed:0, distance:0, track:[], watchId:null, timer:null, startTime:null, pausedElapsed:0, lastPos:null };
 
-function haversine(a,b) {
-  const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lng-a.lng)*Math.PI/180;
-  const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+function haversine(a, b) {
+  const R = 6371, dLat = (b.lat-a.lat)*Math.PI/180, dLon = (b.lng-a.lng)*Math.PI/180;
+  const x = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
 }
 
 function recordPage() {
-  return `<div class="rec-ov"><div class="rec-map"><div style="position:absolute;top:1rem;left:1rem;right:1rem;display:flex;justify-content:space-between;align-items:center">
-    <span style="color:#fff;cursor:pointer;font-size:.875rem" onclick="cancelRec()">\u2190 Cancel</span>
-    <span id="gps-info" style="color:rgba(255,255,255,.7);font-size:.75rem">Waiting for GPS...</span></div>
-    <div id="geo-err" style="position:absolute;bottom:1rem;left:1rem;right:1rem;display:none;background:rgba(220,38,38,.9);color:#fff;padding:.75rem;border-radius:8px;font-size:.875rem"></div>
-    <div id="rec-msg" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.3);font-size:1.25rem">Press start to begin recording</div></div>
-    <div class="rec-panel"><div class="rec-stats">
-      <div><div class="rsv" id="r-dist">0.0</div><div class="rsl">km</div></div>
-      <div><div class="rsv" id="r-dur">0:00</div><div class="rsl">Duration</div></div>
-      <div><div class="rsv" id="r-pace">-</div><div class="rsl">Pace /km</div></div></div>
-      <div class="rec-acts" id="r-btns"></div></div></div>`;
+  return `<div class="rec-ov">
+    <div class="rec-map">
+      <div style="position:absolute;top:1rem;left:1rem;right:1rem;display:flex;justify-content:space-between;align-items:center;z-index:1">
+        <span style="color:rgba(255,255,255,.8);cursor:pointer;font-size:.8125rem;font-weight:500;display:flex;align-items:center;gap:.375rem" onclick="cancelRec()">${SVG.arrow} Cancel</span>
+        <span id="gps-info" style="color:rgba(255,255,255,.5);font-size:.75rem;font-weight:500">Waiting for GPS...</span>
+      </div>
+      <div id="geo-err" style="position:absolute;bottom:1rem;left:1rem;right:1rem;display:none;background:rgba(239,68,68,.9);color:#fff;padding:.75rem 1rem;border-radius:var(--r);font-size:.8125rem;font-weight:500;z-index:1"></div>
+      <div id="rec-msg" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.25);font-size:1.125rem;font-weight:500">Press start to begin recording</div>
+    </div>
+    <div class="rec-panel">
+      <div class="rec-stats">
+        <div><div class="rsv" id="r-dist">0.0</div><div class="rsl">km</div></div>
+        <div><div class="rsv" id="r-dur">0:00</div><div class="rsl">Duration</div></div>
+        <div><div class="rsv" id="r-pace">-</div><div class="rsl">Pace /km</div></div>
+      </div>
+      <div class="rec-acts" id="r-btns"></div>
+    </div>
+  </div>`;
 }
 
-function bindRecord() {
-  updateRecUI();
-}
+function bindRecord() { updateRecUI(); }
 
 function updateRecUI() {
-  const d = $('#r-dist'); const t = $('#r-dur'); const p = $('#r-pace');
+  const d = $('#r-dist'), t = $('#r-dur'), p = $('#r-pace');
   if (d) d.textContent = fmtDist(rec.distance);
   if (t) t.textContent = fmtDur(rec.elapsed);
   if (p) p.textContent = rec.distance > 0.01 ? fmtDur(Math.round(rec.elapsed/rec.distance)) : '-';
   const info = $('#gps-info');
-  if (info) info.textContent = rec.track.length > 0 ? rec.track.length + ' GPS points' : 'Waiting for GPS...';
+  if (info) info.textContent = rec.track.length > 0 ? rec.track.length+' GPS points' : 'Waiting for GPS...';
   const msg = $('#rec-msg');
   if (msg) msg.textContent = rec.status === 'idle' ? 'Press start to begin recording' : rec.status === 'recording' ? 'Recording...' : 'Paused';
   const btns = $('#r-btns');
@@ -513,13 +1096,13 @@ function updateRecUI() {
   if (rec.status === 'idle') {
     btns.innerHTML = '<button class="rec-btn go" onclick="startRec()">\u25B6</button>';
   } else if (rec.status === 'recording') {
-    btns.innerHTML = `<button class="btn btn-o" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="discardRec()">Discard</button>
+    btns.innerHTML = `<button class="btn btn-o" style="color:#fff;border-color:rgba(255,255,255,.2)" onclick="discardRec()">Discard</button>
       <button class="rec-btn rec" onclick="pauseRec()">\u23F8</button>
-      <button class="btn btn-o" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="finishRec()">Finish</button>`;
-  } else if (rec.status === 'paused') {
-    btns.innerHTML = `<button class="btn btn-o" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="discardRec()">Discard</button>
+      <button class="btn btn-o" style="color:#fff;border-color:rgba(255,255,255,.2)" onclick="finishRec()">Finish</button>`;
+  } else {
+    btns.innerHTML = `<button class="btn btn-o" style="color:#fff;border-color:rgba(255,255,255,.2)" onclick="discardRec()">Discard</button>
       <button class="rec-btn go" onclick="resumeRec()">\u25B6</button>
-      <button class="btn btn-o" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="finishRec()">Finish</button>`;
+      <button class="btn btn-o" style="color:#fff;border-color:rgba(255,255,255,.2)" onclick="finishRec()">Finish</button>`;
   }
 }
 
@@ -543,77 +1126,55 @@ function stopGeo() { if (rec.watchId !== null) { navigator.geolocation.clearWatc
 
 window.startRec = function() {
   if (startGeo() === false) return;
-  rec.status = 'recording';
-  rec.startTime = Date.now();
-  rec.pausedElapsed = rec.elapsed;
+  rec.status = 'recording'; rec.startTime = Date.now(); rec.pausedElapsed = rec.elapsed;
   rec.timer = setInterval(() => { rec.elapsed = rec.pausedElapsed + Math.floor((Date.now()-rec.startTime)/1000); updateRecUI(); }, 1000);
   updateRecUI();
 };
-
-window.pauseRec = function() {
-  rec.status = 'paused';
-  clearInterval(rec.timer);
-  rec.pausedElapsed = rec.elapsed;
-  stopGeo();
-  updateRecUI();
-};
-
+window.pauseRec = function() { rec.status = 'paused'; clearInterval(rec.timer); rec.pausedElapsed = rec.elapsed; stopGeo(); updateRecUI(); };
 window.resumeRec = function() {
-  rec.status = 'recording';
-  rec.startTime = Date.now();
+  rec.status = 'recording'; rec.startTime = Date.now();
   rec.timer = setInterval(() => { rec.elapsed = rec.pausedElapsed + Math.floor((Date.now()-rec.startTime)/1000); updateRecUI(); }, 1000);
-  startGeo();
-  updateRecUI();
+  startGeo(); updateRecUI();
 };
-
-window.finishRec = function() {
-  clearInterval(rec.timer); stopGeo();
-  S.pageData = { distance: rec.distance, elapsed: rec.elapsed, track: rec.track };
-  resetRec();
-  nav('save-recording');
-};
-
-window.discardRec = function() {
-  if (!confirm('Discard this activity?')) return;
-  clearInterval(rec.timer); stopGeo(); resetRec(); nav('dashboard');
-};
-
-window.cancelRec = function() {
-  if (rec.status !== 'idle' && !confirm('Cancel recording? Data will be lost.')) return;
-  clearInterval(rec.timer); stopGeo(); resetRec(); nav('dashboard');
-};
-
+window.finishRec = function() { clearInterval(rec.timer); stopGeo(); S.pageData = { distance:rec.distance, elapsed:rec.elapsed, track:rec.track }; resetRec(); nav('save-recording'); };
+window.discardRec = function() { if (!confirm('Discard this activity?')) return; clearInterval(rec.timer); stopGeo(); resetRec(); nav('dashboard'); };
+window.cancelRec = function() { if (rec.status !== 'idle' && !confirm('Cancel recording? Data will be lost.')) return; clearInterval(rec.timer); stopGeo(); resetRec(); nav('dashboard'); };
 function resetRec() { rec = { status:'idle', elapsed:0, distance:0, track:[], watchId:null, timer:null, startTime:null, pausedElapsed:0, lastPos:null }; }
 
 // ---- Save Recording ----
 function renderSaveRecording(c) {
   const d = S.pageData;
   api('/dogs').then(dogs => {
-    const typeOpts = TYPES.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
-    const dogChecks = dogs.length===0 ? '<p style="font-size:.875rem;color:var(--g500)">No dogs added yet.</p>' :
-      '<div class="dcl">' + dogs.map(dog => `<label class="dcb" data-did="${dog.id}">${esc(dog.name)}</label>`).join('') + '</div>';
+    const typeOpts = TYPES.map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+    const dogChecks = dogs.length === 0 ? '<p style="font-size:.8125rem;color:var(--g500)">No dogs added yet.</p>'
+      : '<div class="dcl">' + dogs.map(dog => `<label class="dcb" data-did="${dog.id}">\u{1F436} ${esc(dog.name)}</label>`).join('') + '</div>';
     c.innerHTML = `<h1 class="pt" style="margin-bottom:1.5rem">Save Activity</h1>
-      <div class="sg"><div class="sc"><div class="sv">${fmtDist(d.distance)}</div><div class="sl">Distance (km)</div></div>
-      <div class="sc"><div class="sv">${fmtDur(d.elapsed)}</div><div class="sl">Duration</div></div></div>
+      <div class="sg">
+        <div class="sc"><div class="sv">${fmtDist(d.distance)}</div><div class="sl">Distance (km)</div></div>
+        <div class="sc"><div class="sv">${fmtDur(d.elapsed)}</div><div class="sl">Duration</div></div>
+        ${d.distance > 0.01 ? `<div class="sc"><div class="sv">${fmtDur(Math.round(d.elapsed/d.distance))}</div><div class="sl">Avg Pace /km</div></div>` : ''}
+      </div>
       <div class="card"><form id="sf">
-        <div class="fg"><label class="fl">Title</label><input class="fi" name="title" placeholder="e.g. Morning trail run"></div>
+        <div class="fg"><label class="fl">Title</label><input class="fi" name="title" placeholder="e.g. Morning trail run" autofocus></div>
         <div class="fg"><label class="fl">Type</label><select class="fs" name="type">${typeOpts}</select></div>
         <div class="fg"><label class="fl">Dogs</label>${dogChecks}</div>
         <div class="fg"><label class="fl">Notes</label><textarea class="ft" name="notes" placeholder="How did it go?"></textarea></div>
-        <div class="btn-group"><button class="btn btn-p btn-lg" type="submit">Save Activity</button>
-        <button class="btn btn-o" type="button" onclick="nav('dashboard')">Discard</button></div></form></div>`;
+        <div class="btn-group">
+          <button class="btn btn-p btn-lg" type="submit" id="sf-btn">Save Activity</button>
+          <button class="btn btn-o btn-lg" type="button" onclick="nav('dashboard')">Discard</button>
+        </div></form></div>`;
     $$('.dcb').forEach(el => { el.onclick = () => el.classList.toggle('sel'); });
-    $('#sf').onsubmit = async (e) => {
+    $('#sf').onsubmit = async e => {
       e.preventDefault();
+      const btn = $('#sf-btn'); btn.disabled = true; btn.textContent = 'Saving...';
       const fd = new FormData(e.target);
       const dogIds = $$('.dcb.sel').map(el => Number(el.dataset.did));
       const title = fd.get('title') || (fd.get('type').charAt(0).toUpperCase()+fd.get('type').slice(1)+' Activity');
       try {
-        await api('/activities', { method:'POST', body: JSON.stringify({ title, type:fd.get('type'),
-          distanceKm: Math.round(d.distance*100)/100, durationSeconds:d.elapsed, date:today(),
-          notes:fd.get('notes')||null, dogIds, gpsTrack:d.track.length?d.track:null }) });
+        await api('/activities', { method:'POST', body:JSON.stringify({ title, type:fd.get('type'), distanceKm:Math.round(d.distance*100)/100, durationSeconds:d.elapsed, date:today(), notes:fd.get('notes')||null, dogIds, gpsTrack:d.track.length?d.track:null }) });
+        toast('Activity saved');
         nav('activities');
-      } catch(err) { alert(err.message); }
+      } catch(err) { alert(err.message); btn.disabled = false; btn.textContent = 'Save Activity'; }
     };
   });
 }
@@ -622,17 +1183,21 @@ function renderSaveRecording(c) {
 async function loadProfile(c) {
   try {
     const [stats, dogs] = await Promise.all([api('/activities/stats'), api('/dogs')]);
-    const byType = (stats.byType||[]).map(t => `<div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 0;border-bottom:1px solid var(--g100)">
-      <span style="font-size:1.25rem">${icon(t.type)}</span><div style="flex:1"><div style="font-weight:600;text-transform:capitalize">${esc(t.type)}</div>
-      <div style="font-size:.8125rem;color:var(--g500)">${t.count} activities</div></div>
-      <div style="text-align:right;font-size:.875rem"><div>${fmtDist(t.total_distance_km)} km</div><div style="color:var(--g500)">${fmtDur(t.total_duration_seconds)}</div></div></div>`).join('');
+    const byType = (stats.byType||[]).map(t => `<div class="type-row">
+      <div class="type-icon">${icon(t.type)}</div>
+      <div style="flex:1"><div style="font-weight:600;font-size:.875rem;text-transform:capitalize;color:var(--g900)">${esc(t.type)}</div>
+        <div style="font-size:.75rem;color:var(--g500)">${t.count} activit${t.count===1?'y':'ies'}</div></div>
+      <div style="text-align:right;font-size:.8125rem"><div style="font-weight:600;color:var(--g900)">${fmtDist(t.total_distance_km)} km</div>
+        <div style="color:var(--g500)">${fmtDur(t.total_duration_seconds)}</div></div></div>`).join('');
 
     c.innerHTML = `
-      <div class="card" style="text-align:center;padding-top:2rem">
-        <div style="width:72px;height:72px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto .75rem;font-weight:700">${esc(S.user.displayName.charAt(0).toUpperCase())}</div>
-        <h1 style="font-size:1.5rem;font-weight:700">${esc(S.user.displayName)}</h1>
-        <p style="color:var(--g500);font-size:.875rem">@${esc(S.user.username)}</p>
-        <p style="color:var(--g400);font-size:.8125rem;margin-top:.25rem">${dogs.length} dog${dogs.length!==1?'s':''} registered</p></div>
+      <div class="card" style="text-align:center;padding:2rem 1.25rem">
+        <div class="profile-avatar">${esc(S.user.displayName.charAt(0).toUpperCase())}</div>
+        <h1 style="font-size:1.5rem;font-weight:800;letter-spacing:-.03em;color:var(--g900)">${esc(S.user.displayName)}</h1>
+        <p style="color:var(--g500);font-size:.8125rem">@${esc(S.user.username)}</p>
+        <p style="color:var(--g400);font-size:.75rem;margin-top:.375rem">${dogs.length} dog${dogs.length !== 1 ? 's' : ''} registered</p>
+      </div>
+
       <div class="sec">Overall Statistics</div>
       <div class="sg">
         <div class="sc"><div class="sv">${stats.overall.total_activities}</div><div class="sl">Activities</div></div>
@@ -640,13 +1205,17 @@ async function loadProfile(c) {
         <div class="sc"><div class="sv">${fmtDur(stats.overall.total_duration_seconds)}</div><div class="sl">Total Time</div></div>
         <div class="sc"><div class="sv">${fmtPace(stats.overall.total_distance_km, stats.overall.total_duration_seconds)}</div><div class="sl">Avg Pace</div></div>
         <div class="sc"><div class="sv">${fmtDist(stats.overall.avg_distance_km)}</div><div class="sl">Avg Distance</div></div>
-        <div class="sc"><div class="sv">${fmtDur(Math.round(stats.overall.avg_duration_seconds))}</div><div class="sl">Avg Duration</div></div></div>
+        <div class="sc"><div class="sv">${fmtDur(Math.round(stats.overall.avg_duration_seconds))}</div><div class="sl">Avg Duration</div></div>
+      </div>
+
       <div class="sec">This Week</div>
       <div class="sg">
         <div class="sc"><div class="sv">${stats.recentWeek.activities}</div><div class="sl">Activities</div></div>
         <div class="sc"><div class="sv">${fmtDist(stats.recentWeek.distance_km)}</div><div class="sl">Distance (km)</div></div>
-        <div class="sc"><div class="sv">${fmtDur(stats.recentWeek.duration_seconds)}</div><div class="sl">Duration</div></div></div>
-      ${byType?`<div class="sec">By Activity Type</div><div class="card">${byType}</div>`:''}
+        <div class="sc"><div class="sv">${fmtDur(stats.recentWeek.duration_seconds)}</div><div class="sl">Duration</div></div>
+      </div>
+
+      ${byType ? `<div class="sec">By Activity Type</div><div class="card">${byType}</div>` : ''}
       <div style="margin-top:2rem;text-align:center"><button class="btn btn-o" onclick="logout()">Log out</button></div>`;
   } catch(err) { c.innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
 }
