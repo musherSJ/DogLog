@@ -893,6 +893,15 @@ window.showDogModal = async function(id) {
   let dog = id ? (window._dogs||[]).find(d => d.id === id) : null;
   if (id && !dog) try { dog = await api('/dogs/'+id); } catch(e) {}
   const m = $('#dog-modal');
+  const bd = dog && dog.birth_date ? dog.birth_date : '';
+  const curY = new Date().getFullYear();
+  let yearOpts = '<option value="">Year</option>';
+  for (let i=curY;i>=curY-25;i--) yearOpts += '<option value="'+i+'"'+(bd.startsWith(i+'-')?' selected':'')+'>'+i+'</option>';
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let monthOpts = '<option value="">Month</option>';
+  months.forEach((mn,i) => { const v=String(i+1).padStart(2,'0'); monthOpts += '<option value="'+v+'"'+(bd.slice(5,7)===v?' selected':'')+'>'+mn+'</option>'; });
+  let dayOpts = '<option value="">Day</option>';
+  for (let i=1;i<=31;i++) { const v=String(i).padStart(2,'0'); dayOpts += '<option value="'+v+'"'+(bd.slice(8,10)===v?' selected':'')+'>'+v+'</option>'; }
   m.innerHTML = `<div class="modal-ov" onclick="$('#dog-modal').innerHTML=''"><div class="modal" onclick="event.stopPropagation()">
     <h2 class="modal-t">${dog ? 'Edit Dog' : 'Add Dog'}</h2><div id="dog-err"></div>
     <form id="dog-f">
@@ -903,9 +912,9 @@ window.showDogModal = async function(id) {
       </div>
       <div class="fg"><label class="fl">Birth Date</label>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem">
-          <select class="fs" name="birthYear"><option value="">Year</option>${(()=>{ const y=new Date().getFullYear(); let o=''; for(let i=y;i>=y-25;i--) o+=\`<option value="\${i}" \${dog&&dog.birth_date&&dog.birth_date.startsWith(i+'-')?'selected':''}>\${i}</option>\`; return o; })()}</select>
-          <select class="fs" name="birthMonth"><option value="">Month</option>${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i)=>{ const v=String(i+1).padStart(2,'0'); return \`<option value="\${v}" \${dog&&dog.birth_date&&dog.birth_date.slice(5,7)===v?'selected':''}>\${m}</option>\`; }).join('')}</select>
-          <select class="fs" name="birthDay"><option value="">Day</option>${(()=>{ let o=''; for(let i=1;i<=31;i++){ const v=String(i).padStart(2,'0'); o+=\`<option value="\${v}" \${dog&&dog.birth_date&&dog.birth_date.slice(8,10)===v?'selected':''}>\${v}</option>\`; } return o; })()}</select>
+          <select class="fs" name="birthYear">${yearOpts}</select>
+          <select class="fs" name="birthMonth">${monthOpts}</select>
+          <select class="fs" name="birthDay">${dayOpts}</select>
         </div></div>
       <div class="fg"><label class="fl">Notes</label><textarea class="ft" name="notes">${dog && dog.notes ? esc(dog.notes) : ''}</textarea></div>
       <div class="btn-group">
