@@ -3,4 +3,5 @@
 *.db-wal
 __pycache__/
 .env
+.secret_key
 venv/

@@ -1,10 +1,12 @@
 import os
+import re
 import sqlite3
 import secrets
 import hashlib
 import hmac
 import json
 import time
+from collections import defaultdict
 from functools import wraps
 
 from flask import Flask, request, jsonify, send_from_directory, g
@@ -12,9 +14,80 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 
-SECRET_KEY = os.environ.get('SECRET_KEY', secrets.token_hex(64))
+
+# --- Persistent SECRET_KEY ---
+
+def _load_or_create_secret():
+    key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.secret_key')
+    env_key = os.environ.get('SECRET_KEY')
+    if env_key:
+        return env_key
+    try:
+        with open(key_file, 'r') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        key = secrets.token_hex(64)
+        with open(key_file, 'w') as f:
+            f.write(key)
+        os.chmod(key_file, 0o600)
+        return key
+
+
+SECRET_KEY = _load_or_create_secret()
 TOKEN_MAX_AGE = 7 * 24 * 3600  # 7 days
 serializer = URLSafeTimedSerializer(SECRET_KEY)
+
+
+# --- Rate limiting (in-memory) ---
+
+_rate_limits = defaultdict(list)
+RATE_LIMIT_WINDOW = 300   # 5 minutes
+RATE_LIMIT_MAX = 10        # max attempts per window
+
+
+def _is_rate_limited(key):
+    now = time.time()
+    attempts = _rate_limits[key]
+    _rate_limits[key] = [t for t in attempts if now - t < RATE_LIMIT_WINDOW]
+    if len(_rate_limits[key]) >= RATE_LIMIT_MAX:
+        return True
+    _rate_limits[key].append(now)
+    return False
+
+
+# --- Validation helpers ---
+
+VALID_ACTIVITY_TYPES = {'run', 'walk', 'ski', 'bike', 'sled', 'swim', 'hike', 'other'}
+MAX_TEXT_LEN = 500
+MAX_NOTES_LEN = 5000
+DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+
+def _clamp_str(val, maxlen=MAX_TEXT_LEN):
+    if val is None:
+        return None
+    s = str(val).strip()
+    return s[:maxlen] if s else None
+
+
+def _clamp_float(val, lo=0, hi=100000):
+    if val is None:
+        return 0
+    try:
+        f = float(val)
+    except (TypeError, ValueError):
+        return 0
+    return max(lo, min(f, hi))
+
+
+def _clamp_int(val, lo=0, hi=1000000):
+    if val is None:
+        return 0
+    try:
+        i = int(val)
+    except (TypeError, ValueError):
+        return 0
+    return max(lo, min(i, hi))
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'doglog.db')
 
@@ -31,6 +104,29 @@ def verify_password(password, stored):
     salt, expected = stored.split(':', 1)
     h = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 260000)
     return hmac.compare_digest(h.hex(), expected)
+
+
+# Dummy hash used to prevent timing-based username enumeration
+_DUMMY_HASH = hash_password('dummy_password_for_timing')
+
+
+# --- Security headers ---
+
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src https://fonts.gstatic.com; "
+        "img-src 'self' data:; "
+        "connect-src 'self'"
+    )
+    return response
 
 
 # --- Database ---
@@ -149,17 +245,25 @@ def index():
 
 @app.route('/api/users/register', methods=['POST'])
 def register():
+    ip = request.remote_addr or 'unknown'
+    if _is_rate_limited('register:' + ip):
+        return jsonify({'error': 'Too many attempts. Please try again later.'}), 429
+
     data = request.get_json()
-    username = (data.get('username') or '').strip()
+    username = (data.get('username') or '').strip()[:150]
     password = data.get('password') or ''
-    display_name = (data.get('displayName') or '').strip()
+    display_name = (data.get('displayName') or '').strip()[:150]
 
     if not username or not password or not display_name:
         return jsonify({'error': 'Username, password, and display name are required'}), 400
     if len(username) < 3:
         return jsonify({'error': 'Username must be at least 3 characters'}), 400
+    if not re.match(r'^[a-zA-Z0-9_.-]+$', username):
+        return jsonify({'error': 'Username may only contain letters, numbers, underscores, hyphens, and dots'}), 400
     if len(password) < 8:
         return jsonify({'error': 'Password must be at least 8 characters'}), 400
+    if len(password) > 1000:
+        return jsonify({'error': 'Password too long'}), 400
 
     db = get_db()
     if db.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone():
@@ -178,6 +282,10 @@ def register():
 
 @app.route('/api/users/login', methods=['POST'])
 def login():
+    ip = request.remote_addr or 'unknown'
+    if _is_rate_limited('login:' + ip):
+        return jsonify({'error': 'Too many login attempts. Please try again later.'}), 429
+
     data = request.get_json()
     username = (data.get('username') or '').strip()
     password = data.get('password') or ''
@@ -187,7 +295,10 @@ def login():
 
     db = get_db()
     user = row_to_dict(db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone())
-    if not user or not verify_password(password, user['password_hash']):
+    # Always run verify to prevent timing-based username enumeration
+    pw_hash = user['password_hash'] if user else _DUMMY_HASH
+    valid = verify_password(password, pw_hash)
+    if not user or not valid:
         return jsonify({'error': 'Invalid username or password'}), 401
 
     token = generate_token(user['id'])
@@ -228,14 +339,23 @@ def get_dog(dog_id):
 @auth_required
 def create_dog():
     data = request.get_json()
-    name = (data.get('name') or '').strip()
+    name = _clamp_str(data.get('name'))
     if not name:
         return jsonify({'error': 'Name is required'}), 400
+
+    breed = _clamp_str(data.get('breed'))
+    birth_date = data.get('birthDate')
+    if birth_date and not DATE_RE.match(str(birth_date)):
+        birth_date = None
+    weight_kg = data.get('weightKg')
+    if weight_kg is not None:
+        weight_kg = _clamp_float(weight_kg, 0, 200)
+    notes = _clamp_str(data.get('notes'), MAX_NOTES_LEN)
 
     db = get_db()
     cur = db.execute(
         'INSERT INTO dogs (user_id, name, breed, birth_date, weight_kg, notes) VALUES (?, ?, ?, ?, ?, ?)',
-        (g.user_id, name, data.get('breed'), data.get('birthDate'), data.get('weightKg'), data.get('notes'))
+        (g.user_id, name, breed, birth_date, weight_kg, notes)
     )
     db.commit()
     dog = row_to_dict(db.execute('SELECT * FROM dogs WHERE id = ?', (cur.lastrowid,)).fetchone())
@@ -251,13 +371,22 @@ def update_dog(dog_id):
         return jsonify({'error': 'Dog not found'}), 404
 
     data = request.get_json()
-    name = (data.get('name') or '').strip()
+    name = _clamp_str(data.get('name'))
     if not name:
         return jsonify({'error': 'Name is required'}), 400
 
+    breed = _clamp_str(data.get('breed'))
+    birth_date = data.get('birthDate')
+    if birth_date and not DATE_RE.match(str(birth_date)):
+        birth_date = None
+    weight_kg = data.get('weightKg')
+    if weight_kg is not None:
+        weight_kg = _clamp_float(weight_kg, 0, 200)
+    notes = _clamp_str(data.get('notes'), MAX_NOTES_LEN)
+
     db.execute(
         'UPDATE dogs SET name=?, breed=?, birth_date=?, weight_kg=?, notes=? WHERE id=?',
-        (name, data.get('breed'), data.get('birthDate'), data.get('weightKg'), data.get('notes'), dog_id)
+        (name, breed, birth_date, weight_kg, notes, dog_id)
     )
     db.commit()
     return jsonify(row_to_dict(db.execute('SELECT * FROM dogs WHERE id = ?', (dog_id,)).fetchone()))
@@ -358,19 +487,26 @@ def get_activity(activity_id):
 @auth_required
 def create_activity():
     data = request.get_json()
-    title = (data.get('title') or '').strip()
+    title = _clamp_str(data.get('title'))
     date = data.get('date')
     if not title:
         return jsonify({'error': 'Title is required'}), 400
-    if not date:
-        return jsonify({'error': 'Date is required'}), 400
+    if not date or not DATE_RE.match(str(date)):
+        return jsonify({'error': 'Valid date (YYYY-MM-DD) is required'}), 400
+
+    act_type = data.get('type', 'run')
+    if act_type not in VALID_ACTIVITY_TYPES:
+        act_type = 'other'
+    distance_km = _clamp_float(data.get('distanceKm'), 0, 10000)
+    duration_seconds = _clamp_int(data.get('durationSeconds'), 0, 360000)
+    notes = _clamp_str(data.get('notes'), MAX_NOTES_LEN)
 
     gps = json.dumps(data['gpsTrack']) if data.get('gpsTrack') else None
 
     db = get_db()
     cur = db.execute(
         'INSERT INTO activities (user_id, title, type, distance_km, duration_seconds, date, notes, gps_track) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        (g.user_id, title, data.get('type', 'run'), data.get('distanceKm', 0), data.get('durationSeconds', 0), date, data.get('notes'), gps)
+        (g.user_id, title, act_type, distance_km, duration_seconds, date, notes, gps)
     )
     activity_id = cur.lastrowid
 
@@ -394,18 +530,25 @@ def update_activity(activity_id):
         return jsonify({'error': 'Activity not found'}), 404
 
     data = request.get_json()
-    title = (data.get('title') or '').strip()
+    title = _clamp_str(data.get('title'))
     date = data.get('date')
     if not title:
         return jsonify({'error': 'Title is required'}), 400
-    if not date:
-        return jsonify({'error': 'Date is required'}), 400
+    if not date or not DATE_RE.match(str(date)):
+        return jsonify({'error': 'Valid date (YYYY-MM-DD) is required'}), 400
+
+    act_type = data.get('type', 'run')
+    if act_type not in VALID_ACTIVITY_TYPES:
+        act_type = 'other'
+    distance_km = _clamp_float(data.get('distanceKm'), 0, 10000)
+    duration_seconds = _clamp_int(data.get('durationSeconds'), 0, 360000)
+    notes = _clamp_str(data.get('notes'), MAX_NOTES_LEN)
 
     gps = json.dumps(data['gpsTrack']) if data.get('gpsTrack') else activity['gps_track']
 
     db.execute(
         'UPDATE activities SET title=?, type=?, distance_km=?, duration_seconds=?, date=?, notes=?, gps_track=? WHERE id=?',
-        (title, data.get('type', 'run'), data.get('distanceKm', 0), data.get('durationSeconds', 0), date, data.get('notes'), gps, activity_id)
+        (title, act_type, distance_km, duration_seconds, date, notes, gps, activity_id)
     )
     db.execute('DELETE FROM activity_dogs WHERE activity_id = ?', (activity_id,))
     for dog_id in (data.get('dogIds') or []):
