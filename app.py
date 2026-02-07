@@ -58,9 +58,23 @@ def _is_rate_limited(key):
 # --- Validation helpers ---
 
 VALID_ACTIVITY_TYPES = {'run', 'walk', 'ski', 'bike', 'sled', 'swim', 'hike', 'other'}
+VALID_PERIODS = {'total', 'year', 'month', 'week', 'day'}
 MAX_TEXT_LEN = 500
 MAX_NOTES_LEN = 5000
 DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+
+def _date_filter(period):
+    """Return (sql_fragment, params_tuple) for a date period filter."""
+    if period == 'year':
+        return "AND date >= date('now', 'start of year')", ()
+    elif period == 'month':
+        return "AND date >= date('now', 'start of month')", ()
+    elif period == 'week':
+        return "AND date >= date('now', '-7 days')", ()
+    elif period == 'day':
+        return "AND date >= date('now')", ()
+    return "", ()  # 'total' or default: no filter
 
 
 def _clamp_str(val, maxlen=MAX_TEXT_LEN):
@@ -412,6 +426,11 @@ def get_dog_stats(dog_id):
     if not dog:
         return jsonify({'error': 'Dog not found'}), 404
 
+    period = request.args.get('period', 'total')
+    if period not in VALID_PERIODS:
+        period = 'total'
+    df, dp = _date_filter(period)
+
     stats = row_to_dict(db.execute('''
         SELECT COUNT(a.id) as total_activities,
             COALESCE(SUM(a.distance_km), 0) as total_distance_km,
@@ -419,16 +438,15 @@ def get_dog_stats(dog_id):
             COALESCE(AVG(a.distance_km), 0) as avg_distance_km,
             COALESCE(AVG(a.duration_seconds), 0) as avg_duration_seconds
         FROM activities a JOIN activity_dogs ad ON a.id = ad.activity_id
-        WHERE ad.dog_id = ? AND a.user_id = ?
-    ''', (dog_id, g.user_id)).fetchone())
+        WHERE ad.dog_id = ? AND a.user_id = ? ''' + df, (dog_id, g.user_id) + dp).fetchone())
 
     activities = rows_to_dicts(db.execute('''
         SELECT a.* FROM activities a JOIN activity_dogs ad ON a.id = ad.activity_id
-        WHERE ad.dog_id = ? AND a.user_id = ? ORDER BY a.date DESC
-    ''', (dog_id, g.user_id)).fetchall())
+        WHERE ad.dog_id = ? AND a.user_id = ? ''' + df + ' ORDER BY a.date DESC',
+        (dog_id, g.user_id) + dp).fetchall())
     attach_dogs(db, activities)
 
-    return jsonify({'dog': dog, 'stats': stats, 'activities': activities})
+    return jsonify({'dog': dog, 'stats': stats, 'activities': activities, 'period': period})
 
 
 # --- Activity routes ---
@@ -446,21 +464,24 @@ def get_activities():
 @auth_required
 def get_activity_stats():
     db = get_db()
+    period = request.args.get('period', 'total')
+    if period not in VALID_PERIODS:
+        period = 'total'
+    df, dp = _date_filter(period)
+
     overall = row_to_dict(db.execute('''
         SELECT COUNT(*) as total_activities,
             COALESCE(SUM(distance_km), 0) as total_distance_km,
             COALESCE(SUM(duration_seconds), 0) as total_duration_seconds,
             COALESCE(AVG(distance_km), 0) as avg_distance_km,
             COALESCE(AVG(duration_seconds), 0) as avg_duration_seconds
-        FROM activities WHERE user_id = ?
-    ''', (g.user_id,)).fetchone())
+        FROM activities WHERE user_id = ? ''' + df, (g.user_id,) + dp).fetchone())
 
     by_type = rows_to_dicts(db.execute('''
         SELECT type, COUNT(*) as count,
             COALESCE(SUM(distance_km), 0) as total_distance_km,
             COALESCE(SUM(duration_seconds), 0) as total_duration_seconds
-        FROM activities WHERE user_id = ? GROUP BY type
-    ''', (g.user_id,)).fetchall())
+        FROM activities WHERE user_id = ? ''' + df + ' GROUP BY type', (g.user_id,) + dp).fetchall())
 
     recent_week = row_to_dict(db.execute('''
         SELECT COUNT(*) as activities,
@@ -469,7 +490,7 @@ def get_activity_stats():
         FROM activities WHERE user_id = ? AND date >= date('now', '-7 days')
     ''', (g.user_id,)).fetchone())
 
-    return jsonify({'overall': overall, 'byType': by_type, 'recentWeek': recent_week})
+    return jsonify({'overall': overall, 'byType': by_type, 'recentWeek': recent_week, 'period': period})
 
 
 @app.route('/api/activities/<int:activity_id>')

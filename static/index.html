@@ -601,6 +601,28 @@ a { color: var(--primary); text-decoration: none; }
   .sg { grid-template-columns: repeat(3, 1fr); }
 }
 
+/* Period filter pills */
+.pf { display: flex; gap: .375rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.pf-btn {
+  padding: .375rem .875rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+  border: 1.5px solid var(--g200);
+  background: var(--g0);
+  color: var(--g500);
+  cursor: pointer;
+  transition: all .2s var(--ease);
+  font-family: inherit;
+}
+.pf-btn:hover { border-color: var(--g300); color: var(--g700); }
+.pf-btn.act {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(99,102,241,.25);
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -813,10 +835,32 @@ function bindRegister() {
   };
 }
 
+// ---- Period filter helpers ----
+const PERIODS = [['total','All Time'],['year','Year'],['month','Month'],['week','Week'],['day','Today']];
+
+function periodFilterHTML(current, callbackName) {
+  return '<div class="pf">' + PERIODS.map(([v,l]) =>
+    '<button class="pf-btn'+(v===current?' act':'')+'" onclick="'+callbackName+'(\''+v+'\')">'+l+'</button>'
+  ).join('') + '</div>';
+}
+
+function statsGridHTML(s) {
+  return `<div class="sg">
+    <div class="sc"><div class="sv">${s.total_activities}</div><div class="sl">Activities</div></div>
+    <div class="sc"><div class="sv">${fmtDist(s.total_distance_km)}</div><div class="sl">Distance</div></div>
+    <div class="sc"><div class="sv">${fmtDur(s.total_duration_seconds)}</div><div class="sl">Duration</div></div>
+    <div class="sc"><div class="sv">${fmtPace(s.total_distance_km, s.total_duration_seconds)}</div><div class="sl">Avg Pace</div></div>
+    <div class="sc"><div class="sv">${fmtDist(s.avg_distance_km)}</div><div class="sl">Avg Distance</div></div>
+    <div class="sc"><div class="sv">${fmtDur(Math.round(s.avg_duration_seconds))}</div><div class="sl">Avg Duration</div></div>
+  </div>`;
+}
+
 // ---- Dashboard ----
+let _dashPeriod = 'total';
+
 async function loadDashboard(c) {
   try {
-    const [stats, activities, dogs] = await Promise.all([api('/activities/stats'), api('/activities'), api('/dogs')]);
+    const [stats, activities, dogs] = await Promise.all([api('/activities/stats?period='+_dashPeriod), api('/activities'), api('/dogs')]);
     const recent = activities.slice(0, 5);
     c.innerHTML = `
       <div class="ph">
@@ -828,19 +872,9 @@ async function loadDashboard(c) {
         </div>
       </div>
 
-      <div class="sec">This Week</div>
-      <div class="sg">
-        <div class="sc"><div class="sv">${stats.recentWeek.activities}</div><div class="sl">Activities</div></div>
-        <div class="sc"><div class="sv">${fmtDist(stats.recentWeek.distance_km)}</div><div class="sl">Kilometers</div></div>
-        <div class="sc"><div class="sv">${fmtDur(stats.recentWeek.duration_seconds)}</div><div class="sl">Duration</div></div>
-      </div>
-
-      <div class="sec">All Time</div>
-      <div class="sg">
-        <div class="sc"><div class="sv">${stats.overall.total_activities}</div><div class="sl">Activities</div></div>
-        <div class="sc"><div class="sv">${fmtDist(stats.overall.total_distance_km)}</div><div class="sl">Total km</div></div>
-        <div class="sc"><div class="sv">${fmtDur(stats.overall.total_duration_seconds)}</div><div class="sl">Total Time</div></div>
-      </div>
+      <div class="sec">Statistics</div>
+      ${periodFilterHTML(_dashPeriod, 'switchDashPeriod')}
+      <div id="dash-stats">${statsGridHTML(stats.overall)}</div>
 
       <div class="card">
         <div class="card-hdr"><span class="card-title">Recent Activities</span>
@@ -851,6 +885,17 @@ async function loadDashboard(c) {
       </div>`;
   } catch (err) { c.innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
 }
+
+window.switchDashPeriod = async function(p) {
+  _dashPeriod = p;
+  $$('.pf-btn').forEach(b => b.classList.toggle('act', b.textContent === PERIODS.find(x=>x[0]===p)[1]));
+  const el = $('#dash-stats');
+  if (!el) return;
+  try {
+    const stats = await api('/activities/stats?period='+p);
+    el.innerHTML = statsGridHTML(stats.overall);
+  } catch(e) {}
+};
 
 function activityItemHTML(a) {
   const dogs = (a.dogs||[]).map(d => `<span class="dtag">${esc(d.name)}</span>`).join('');
@@ -943,9 +988,12 @@ window.deleteDog = async function(id, name) {
 };
 
 // ---- Dog Detail ----
+let _dogPeriod = 'total';
+
 async function loadDogDetail(c) {
   try {
-    const { dog, stats, activities } = await api('/dogs/'+S.pageData.id+'/stats');
+    const dogId = S.pageData.id;
+    const { dog, stats, activities } = await api('/dogs/'+dogId+'/stats?period='+_dogPeriod);
     const info = [dog.breed, dog.weight_kg ? dog.weight_kg+' kg' : null, dog.birth_date ? 'Born '+fmtDate(dog.birth_date) : null].filter(Boolean).join(' \u00B7 ');
     c.innerHTML = `
       <div class="back" onclick="nav('dogs')">${SVG.arrow} Back to Dogs</div>
@@ -956,21 +1004,31 @@ async function loadDogDetail(c) {
         ${dog.notes ? `<p style="margin-top:.5rem;font-size:.8125rem;color:var(--g600);max-width:360px;margin-left:auto;margin-right:auto">${esc(dog.notes)}</p>` : ''}
       </div>
       <div class="sec">Statistics</div>
-      <div class="sg">
-        <div class="sc"><div class="sv">${stats.total_activities}</div><div class="sl">Activities</div></div>
-        <div class="sc"><div class="sv">${fmtDist(stats.total_distance_km)}</div><div class="sl">Total km</div></div>
-        <div class="sc"><div class="sv">${fmtDur(stats.total_duration_seconds)}</div><div class="sl">Total Time</div></div>
-        <div class="sc"><div class="sv">${fmtPace(stats.total_distance_km, stats.total_duration_seconds)}</div><div class="sl">Avg Pace</div></div>
-        <div class="sc"><div class="sv">${fmtDist(stats.avg_distance_km)}</div><div class="sl">Avg Distance</div></div>
-        <div class="sc"><div class="sv">${fmtDur(Math.round(stats.avg_duration_seconds))}</div><div class="sl">Avg Duration</div></div>
-      </div>
+      ${periodFilterHTML(_dogPeriod, 'switchDogPeriod')}
+      <div id="dog-stats">${statsGridHTML(stats)}</div>
       <div class="card"><div class="card-hdr"><span class="card-title">Activity History</span></div>
-        ${activities.length === 0
+        <div id="dog-activities">${activities.length === 0
           ? `<div class="empty"><p>No activities recorded for ${esc(dog.name)} yet.</p></div>`
-          : activities.map(activityItemHTML).join('')}
+          : activities.map(activityItemHTML).join('')}</div>
       </div>`;
+    window._dogDetailId = dogId;
+    window._dogDetailName = dog.name;
   } catch(err) { c.innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
 }
+
+window.switchDogPeriod = async function(p) {
+  _dogPeriod = p;
+  $$('.pf-btn').forEach(b => b.classList.toggle('act', b.textContent === PERIODS.find(x=>x[0]===p)[1]));
+  try {
+    const { stats, activities } = await api('/dogs/'+window._dogDetailId+'/stats?period='+p);
+    const el = $('#dog-stats');
+    if (el) el.innerHTML = statsGridHTML(stats);
+    const al = $('#dog-activities');
+    if (al) al.innerHTML = activities.length === 0
+      ? '<div class="empty"><p>No activities for this period.</p></div>'
+      : activities.map(activityItemHTML).join('');
+  } catch(e) {}
+};
 
 // ---- Activities List ----
 async function loadActivities(c) {
@@ -1196,15 +1254,21 @@ function renderSaveRecording(c) {
 }
 
 // ---- Profile ----
+let _profPeriod = 'total';
+
+function byTypeHTML(byType) {
+  if (!byType || !byType.length) return '';
+  return '<div class="sec">By Activity Type</div><div class="card">' + byType.map(t => `<div class="type-row">
+    <div class="type-icon">${icon(t.type)}</div>
+    <div style="flex:1"><div style="font-weight:600;font-size:.875rem;text-transform:capitalize;color:var(--g900)">${esc(t.type)}</div>
+      <div style="font-size:.75rem;color:var(--g500)">${t.count} activit${t.count===1?'y':'ies'}</div></div>
+    <div style="text-align:right;font-size:.8125rem"><div style="font-weight:600;color:var(--g900)">${fmtDist(t.total_distance_km)} km</div>
+      <div style="color:var(--g500)">${fmtDur(t.total_duration_seconds)}</div></div></div>`).join('') + '</div>';
+}
+
 async function loadProfile(c) {
   try {
-    const [stats, dogs] = await Promise.all([api('/activities/stats'), api('/dogs')]);
-    const byType = (stats.byType||[]).map(t => `<div class="type-row">
-      <div class="type-icon">${icon(t.type)}</div>
-      <div style="flex:1"><div style="font-weight:600;font-size:.875rem;text-transform:capitalize;color:var(--g900)">${esc(t.type)}</div>
-        <div style="font-size:.75rem;color:var(--g500)">${t.count} activit${t.count===1?'y':'ies'}</div></div>
-      <div style="text-align:right;font-size:.8125rem"><div style="font-weight:600;color:var(--g900)">${fmtDist(t.total_distance_km)} km</div>
-        <div style="color:var(--g500)">${fmtDur(t.total_duration_seconds)}</div></div></div>`).join('');
+    const [stats, dogs] = await Promise.all([api('/activities/stats?period='+_profPeriod), api('/dogs')]);
 
     c.innerHTML = `
       <div class="card" style="text-align:center;padding:2rem 1.25rem">
@@ -1214,27 +1278,25 @@ async function loadProfile(c) {
         <p style="color:var(--g400);font-size:.75rem;margin-top:.375rem">${dogs.length} dog${dogs.length !== 1 ? 's' : ''} registered</p>
       </div>
 
-      <div class="sec">Overall Statistics</div>
-      <div class="sg">
-        <div class="sc"><div class="sv">${stats.overall.total_activities}</div><div class="sl">Activities</div></div>
-        <div class="sc"><div class="sv">${fmtDist(stats.overall.total_distance_km)}</div><div class="sl">Total km</div></div>
-        <div class="sc"><div class="sv">${fmtDur(stats.overall.total_duration_seconds)}</div><div class="sl">Total Time</div></div>
-        <div class="sc"><div class="sv">${fmtPace(stats.overall.total_distance_km, stats.overall.total_duration_seconds)}</div><div class="sl">Avg Pace</div></div>
-        <div class="sc"><div class="sv">${fmtDist(stats.overall.avg_distance_km)}</div><div class="sl">Avg Distance</div></div>
-        <div class="sc"><div class="sv">${fmtDur(Math.round(stats.overall.avg_duration_seconds))}</div><div class="sl">Avg Duration</div></div>
-      </div>
-
-      <div class="sec">This Week</div>
-      <div class="sg">
-        <div class="sc"><div class="sv">${stats.recentWeek.activities}</div><div class="sl">Activities</div></div>
-        <div class="sc"><div class="sv">${fmtDist(stats.recentWeek.distance_km)}</div><div class="sl">Distance (km)</div></div>
-        <div class="sc"><div class="sv">${fmtDur(stats.recentWeek.duration_seconds)}</div><div class="sl">Duration</div></div>
-      </div>
-
-      ${byType ? `<div class="sec">By Activity Type</div><div class="card">${byType}</div>` : ''}
+      <div class="sec">Statistics</div>
+      ${periodFilterHTML(_profPeriod, 'switchProfPeriod')}
+      <div id="prof-stats">${statsGridHTML(stats.overall)}</div>
+      <div id="prof-types">${byTypeHTML(stats.byType)}</div>
       <div style="margin-top:2rem;text-align:center"><button class="btn btn-o" onclick="logout()">Log out</button></div>`;
   } catch(err) { c.innerHTML = `<div class="alert alert-e">${esc(err.message)}</div>`; }
 }
+
+window.switchProfPeriod = async function(p) {
+  _profPeriod = p;
+  $$('.pf-btn').forEach(b => b.classList.toggle('act', b.textContent === PERIODS.find(x=>x[0]===p)[1]));
+  try {
+    const stats = await api('/activities/stats?period='+p);
+    const el = $('#prof-stats');
+    if (el) el.innerHTML = statsGridHTML(stats.overall);
+    const tl = $('#prof-types');
+    if (tl) tl.innerHTML = byTypeHTML(stats.byType);
+  } catch(e) {}
+};
 
 // ---- Init ----
 async function init() {
