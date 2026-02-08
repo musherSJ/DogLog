@@ -103,6 +103,35 @@ def _clamp_int(val, lo=0, hi=1000000):
         return 0
     return max(lo, min(i, hi))
 
+
+MAX_GPS_POINTS = 50000  # cap GPS track length
+
+
+def _safe_json(request):
+    """Return parsed JSON body or empty dict (never None)."""
+    data = request.get_json(silent=True)
+    return data if isinstance(data, dict) else {}
+
+
+def _clamp_gps(track):
+    """Validate and truncate GPS track data."""
+    if not isinstance(track, list):
+        return None
+    track = track[:MAX_GPS_POINTS]
+    cleaned = []
+    for pt in track:
+        if not isinstance(pt, dict):
+            continue
+        try:
+            cleaned.append({
+                'lat': float(pt.get('lat', 0)),
+                'lng': float(pt.get('lng', 0)),
+                'time': int(pt.get('time', 0)),
+            })
+        except (TypeError, ValueError):
+            continue
+    return cleaned if cleaned else None
+
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'doglog.db')
 
 
@@ -263,7 +292,7 @@ def register():
     if _is_rate_limited('register:' + ip):
         return jsonify({'error': 'Too many attempts. Please try again later.'}), 429
 
-    data = request.get_json()
+    data = _safe_json(request)
     username = (data.get('username') or '').strip()[:150]
     password = data.get('password') or ''
     display_name = (data.get('displayName') or '').strip()[:150]
@@ -300,7 +329,7 @@ def login():
     if _is_rate_limited('login:' + ip):
         return jsonify({'error': 'Too many login attempts. Please try again later.'}), 429
 
-    data = request.get_json()
+    data = _safe_json(request)
     username = (data.get('username') or '').strip()
     password = data.get('password') or ''
 
@@ -352,7 +381,7 @@ def get_dog(dog_id):
 @app.route('/api/dogs', methods=['POST'])
 @auth_required
 def create_dog():
-    data = request.get_json()
+    data = _safe_json(request)
     name = _clamp_str(data.get('name'))
     if not name:
         return jsonify({'error': 'Name is required'}), 400
@@ -384,7 +413,7 @@ def update_dog(dog_id):
     if not dog:
         return jsonify({'error': 'Dog not found'}), 404
 
-    data = request.get_json()
+    data = _safe_json(request)
     name = _clamp_str(data.get('name'))
     if not name:
         return jsonify({'error': 'Name is required'}), 400
@@ -507,7 +536,7 @@ def get_activity(activity_id):
 @app.route('/api/activities', methods=['POST'])
 @auth_required
 def create_activity():
-    data = request.get_json()
+    data = _safe_json(request)
     title = _clamp_str(data.get('title'))
     date = data.get('date')
     if not title:
@@ -522,7 +551,8 @@ def create_activity():
     duration_seconds = _clamp_int(data.get('durationSeconds'), 0, 360000)
     notes = _clamp_str(data.get('notes'), MAX_NOTES_LEN)
 
-    gps = json.dumps(data['gpsTrack']) if data.get('gpsTrack') else None
+    gps_data = _clamp_gps(data.get('gpsTrack')) if data.get('gpsTrack') else None
+    gps = json.dumps(gps_data) if gps_data else None
 
     db = get_db()
     cur = db.execute(
@@ -550,7 +580,7 @@ def update_activity(activity_id):
     if not activity:
         return jsonify({'error': 'Activity not found'}), 404
 
-    data = request.get_json()
+    data = _safe_json(request)
     title = _clamp_str(data.get('title'))
     date = data.get('date')
     if not title:
@@ -565,7 +595,8 @@ def update_activity(activity_id):
     duration_seconds = _clamp_int(data.get('durationSeconds'), 0, 360000)
     notes = _clamp_str(data.get('notes'), MAX_NOTES_LEN)
 
-    gps = json.dumps(data['gpsTrack']) if data.get('gpsTrack') else activity['gps_track']
+    gps_data = _clamp_gps(data.get('gpsTrack')) if data.get('gpsTrack') else None
+    gps = json.dumps(gps_data) if gps_data else activity['gps_track']
 
     db.execute(
         'UPDATE activities SET title=?, type=?, distance_km=?, duration_seconds=?, date=?, notes=?, gps_track=? WHERE id=?',
